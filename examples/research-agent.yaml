@@ -1,0 +1,152 @@
+metadata:
+  name: "research-agent"
+  description: "Literature research and data synthesis specialist"
+  version: "1.0.0"
+  author: "Xomware"
+  tags: ["research", "analysis", "example"]
+
+model:
+  provider: "anthropic"
+  name: "claude-3-5-sonnet-latest"
+  temperature: 0.4  # Slightly higher for exploratory research
+  max_tokens: 4000
+
+performance:
+  async: true
+  latency_sla_ms: null
+  timeout_ms: 600000  # 10 minutes for comprehensive research
+  max_concurrent_requests: 3
+
+system_prompt_file: "prompts/system.md"
+
+expertise:
+  specialties:
+    - "Literature research and review"
+    - "Comparative analysis"
+    - "Data synthesis"
+    - "Trend identification"
+    - "Market research"
+    - "Competitive analysis"
+    - "Technical benchmarking"
+
+constraints:
+  max_response_length: 8000
+  max_tokens_per_request: 4000
+  rate_limit:
+    requests_per_day: 50
+
+tools:
+  - name: "search_academic_databases"
+    enabled: true
+  - name: "search_web"
+    enabled: true
+  - name: "fetch_content"
+    enabled: true
+  - name: "analyze_data"
+    enabled: true
+  - name: "create_comparison_matrix"
+    enabled: true
+  - name: "generate_charts"
+    enabled: true
+  - name: "compile_bibliography"
+    enabled: true
+  - name: "fact_check"
+    enabled: true
+
+quality_gates:
+  - type: "source_quality"
+    enabled: true
+    min_rating: 2  # Minimum 2-star sources
+  - type: "relevance_check"
+    enabled: true
+  - type: "bias_detection"
+    enabled: true
+  - type: "fact_verification"
+    enabled: true
+
+behavior:
+  style: "analytical"
+  tone: "objective"
+  explain_reasoning: true
+  cite_sources: true
+  show_methodology: true
+
+research_config:
+  # Research types
+  research_types:
+    literature_review:
+      description: "Comprehensive review of published work"
+      typical_sources: 20
+      typical_duration_minutes: 30
+    
+    market_research:
+      description: "Industry trends and market analysis"
+      typical_sources: 15
+      typical_duration_minutes: 20
+    
+    competitive_analysis:
+      description: "Competitive landscape assessment"
+      typical_sources: 10
+      typical_duration_minutes: 15
+    
+    technical_benchmarking:
+      description: "Performance comparison of technologies"
+      typical_sources: 8
+      typical_duration_minutes: 20
+  
+  # Source prioritization
+  source_priority:
+    - "peer_reviewed_journals"
+    - "industry_reports"
+    - "white_papers"
+    - "blog_posts_from_experts"
+    - "general_web_search"
+  
+  # Source quality ratings
+  source_ratings:
+    5:
+      - "Peer-reviewed journal articles"
+      - "Published books"
+      - "Official technical documentation"
+    4:
+      - "Industry reports from established firms"
+      - "White papers from companies"
+      - "Conference papers"
+    3:
+      - "Blog posts from recognized experts"
+      - "News articles from reputable outlets"
+      - "Open-source project documentation"
+    2:
+      - "General blog posts"
+      - "Stack Overflow answers"
+      - "Reddit discussions from credible users"
+    1:
+      - "Unverified online sources"
+      - "Opinionated posts without backing"
+      - "Outdated sources"
+  
+  # Research output format
+  output_format:
+    sections:
+      - "executive_summary"
+      - "research_question"
+      - "methodology"
+      - "findings"
+      - "analysis"
+      - "implications"
+      - "limitations"
+      - "sources"
+  
+  # Analysis depth
+  analysis_depth: "comprehensive"  # brief, moderate, comprehensive
+  
+  # Citation style
+  citation_style: "academic"  # academic, apa, mla, chicago
+  
+  # Include recommendations?
+  include_recommendations: true
+
+metadata_tags:
+  - "example"
+  - "research"
+  - "analysis"

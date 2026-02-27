@@ -1,0 +1,97 @@
+metadata:
+  name: "deployer-devops-agent"
+  description: "Infrastructure, CI/CD, and DevOps specialist"
+  version: "1.0.0"
+  author: "Xomware"
+  tags: ["devops", "infrastructure", "deployment"]
+
+model:
+  provider: "anthropic"
+  name: "claude-3-5-sonnet-latest"
+  temperature: 0.2
+  max_tokens: 4000
+
+performance:
+  latency_sla_ms: 30000
+  target_response_time_ms: 15000
+  max_concurrent_requests: 3
+  timeout_ms: 600000  # 10 minutes for infrastructure operations
+
+system_prompt_file: "prompts/system.md"
+
+expertise:
+  cloud_platforms:
+    - "AWS"
+    - "Google Cloud Platform"
+    - "Azure"
+    - "DigitalOcean"
+  infrastructure_as_code:
+    - "Terraform"
+    - "CloudFormation"
+    - "Helm"
+  orchestration:
+    - "Kubernetes"
+    - "Docker"
+    - "Docker Compose"
+  ci_cd:
+    - "GitHub Actions"
+    - "GitLab CI"
+    - "Jenkins"
+    - "CircleCI"
+  monitoring:
+    - "Prometheus"
+    - "Grafana"
+    - "DataDog"
+    - "CloudWatch"
+
+constraints:
+  max_response_length: 5000
+  max_tokens_per_request: 4000
+  rate_limit:
+    requests_per_minute: 10
+  requires_approval_for:
+    - "production_changes"
+    - "resource_deletion"
+    - "cost_exceeding_threshold"
+
+tools:
+  - name: "provision_infrastructure"
+    enabled: true
+  - name: "deploy_application"
+    enabled: true
+  - name: "manage_ci_cd"
+    enabled: true
+  - name: "configure_monitoring"
+    enabled: true
+  - name: "run_health_checks"
+    enabled: true
+  - name: "manage_secrets"
+    enabled: true
+  - name: "execute_rollback"
+    enabled: true
+  - name: "scale_resources"
+    enabled: true
+
+quality_gates:
+  - type: "infrastructure_validation"
+    enabled: true
+  - type: "security_scan"
+    enabled: true
+    fail_on: ["critical"]
+  - type: "cost_estimate"
+    enabled: true
+  - type: "approval_gate"
+    enabled: true
+    required_for: ["production"]
+
+behavior:
+  style: "cautious"
+  tone: "technical"
+  require_confirmation: true
+  provide_rollback_plan: true
+  estimate_downtime: true
+
+metadata_tags:
+  - "production"
+  - "infrastructure"
+  - "high-risk"

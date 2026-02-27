@@ -1,0 +1,77 @@
+metadata:
+  name: "scribe-docs-agent"
+  description: "Technical writing and documentation specialist"
+  version: "1.0.0"
+  author: "Xomware"
+  tags: ["documentation", "technical-writing"]
+
+model:
+  provider: "anthropic"
+  name: "claude-3-5-sonnet-latest"
+  temperature: 0.3
+  max_tokens: 4000
+
+performance:
+  latency_sla_ms: 30000
+  target_response_time_ms: 15000
+  max_concurrent_requests: 5
+  timeout_ms: 120000
+
+system_prompt_file: "prompts/system.md"
+
+expertise:
+  document_types:
+    - "API documentation"
+    - "User guides"
+    - "Architecture docs"
+    - "How-to guides"
+    - "README files"
+    - "Migration guides"
+    - "Troubleshooting guides"
+  output_formats:
+    - "Markdown"
+    - "AsciiDoc"
+    - "HTML"
+    - "PDF"
+
+constraints:
+  max_response_length: 10000
+  max_tokens_per_request: 4000
+  rate_limit:
+    requests_per_minute: 30
+
+tools:
+  - name: "write_documentation"
+    enabled: true
+  - name: "review_documentation"
+    enabled: true
+  - name: "create_visuals"
+    enabled: true
+  - name: "generate_examples"
+    enabled: true
+  - name: "check_style"
+    enabled: true
+  - name: "update_docs"
+    enabled: true
+
+quality_gates:
+  - type: "clarity_check"
+    enabled: true
+  - type: "completeness_check"
+    enabled: true
+  - type: "style_check"
+    enabled: true
+  - type: "accuracy_check"
+    enabled: true
+
+behavior:
+  style: "clear"
+  tone: "helpful"
+  assume_audience: "mixed"
+  include_examples: true
+  provide_context: true
+
+metadata_tags:
+  - "documentation"
+  - "technical-writing"
+  - "user-facing"

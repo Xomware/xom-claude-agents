@@ -1,0 +1,92 @@
+metadata:
+  name: "specialist-agent-template"
+  description: "Template for specialist agents - extend for your domain"
+  version: "1.0.0"
+  author: "Your Name"
+  tags: ["specialist", "template"]
+
+# Model Configuration
+# Choose based on complexity:
+# - Haiku: simple tasks, fast responses (<1s)
+# - Sonnet: balanced, good for most specialists
+# - Opus: complex reasoning, multi-step workflows
+model:
+  provider: "anthropic"
+  name: "claude-3-5-sonnet-latest"
+  temperature: 0.3
+  max_tokens: 2000
+
+# Performance SLA
+# Specialists typically have more generous timeouts than dispatchers
+performance:
+  latency_sla_ms: 30000
+  timeout_ms: 60000
+  max_concurrent_requests: 5
+
+# System Prompt - Define expertise and approach
+system_prompt_file: "prompts/system.md"
+
+# Specialist expertise definition
+expertise:
+  domain: "Your Domain"
+  specialties:
+    - "Key specialty 1"
+    - "Key specialty 2"
+    - "Key specialty 3"
+  certifications: []  # Optional: list relevant knowledge
+  constraints: []     # Domain-specific constraints
+
+# Constraints & Safety
+constraints:
+  max_response_length: 5000
+  max_tokens_per_request: 2000
+  rate_limit:
+    requests_per_minute: 20
+  requires_approval_for:
+    - "sensitive_operations"
+  content_filters:
+    - "pii"
+    - "sensitive_data"
+
+# Specialist Tools
+# Define tools specific to this specialist
+tools:
+  - name: "primary_tool"
+    enabled: true
+  - name: "analysis_tool"
+    enabled: true
+  - name: "validation_tool"
+    enabled: true
+
+# Quality Gates - Specialist-specific validation
+quality_gates:
+  - type: "domain_specific_check"
+    enabled: true
+  - type: "accuracy_verification"
+    enabled: true
+  - type: "best_practices_check"
+    enabled: true
+
+# Specialist Behavior
+behavior:
+  style: "detailed"           # detailed, balanced, concise
+  tone: "professional"        # professional, friendly, technical
+  explain_reasoning: true     # Always explain your approach
+  provide_alternatives: true  # Show multiple solutions
+  cite_sources: false         # Include references?
+
+# Specialist-specific configuration
+specialist_config:
+  # How to handle edge cases
+  fallback_behavior: "escalate"  # "escalate", "default", "ask"
+  
+  # Self-correction
+  enable_reflection: true
+  
+  # Documentation
+  include_examples: true
+  example_count: 2
+
+metadata_tags:
+  - "specialist"
+  - "custom"

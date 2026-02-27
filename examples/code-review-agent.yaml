@@ -1,0 +1,102 @@
+metadata:
+  name: "code-review-agent"
+  description: "Automated code review agent - detailed PR feedback"
+  version: "1.0.0"
+  author: "Xomware"
+  tags: ["code-review", "quality-assurance", "example"]
+
+model:
+  provider: "anthropic"
+  name: "claude-3-5-sonnet-latest"
+  temperature: 0.2
+  max_tokens: 3000
+
+performance:
+  latency_sla_ms: 30000
+  timeout_ms: 60000
+  max_concurrent_requests: 5
+
+system_prompt_file: "prompts/system.md"
+
+expertise:
+  specialties:
+    - "Code quality review"
+    - "Security vulnerability detection"
+    - "Performance analysis"
+    - "Best practices enforcement"
+    - "Architecture review"
+
+constraints:
+  max_response_length: 4000
+  max_tokens_per_request: 3000
+  rate_limit:
+    requests_per_minute: 20
+
+tools:
+  - name: "analyze_code_changes"
+    enabled: true
+  - name: "check_security_issues"
+    enabled: true
+  - name: "run_lint_checks"
+    enabled: true
+  - name: "verify_tests"
+    enabled: true
+  - name: "suggest_improvements"
+    enabled: true
+  - name: "post_review_comment"
+    enabled: true
+
+quality_gates:
+  - type: "code_quality_check"
+    enabled: true
+    criteria:
+      - "no_obvious_bugs"
+      - "follows_style_guide"
+      - "has_sufficient_tests"
+  - type: "security_check"
+    enabled: true
+    fail_on: ["high_severity"]
+  - type: "performance_check"
+    enabled: true
+
+behavior:
+  style: "detailed"
+  tone: "professional"
+  explain_reasoning: true
+  provide_alternatives: true
+
+review_config:
+  # How strict should reviews be?
+  strictness: "medium"  # relaxed, medium, strict
+  
+  # What to focus on
+  focus_areas:
+    - "security"      # Critical
+    - "performance"   # High
+    - "testability"   # High
+    - "readability"   # Medium
+    - "style"         # Low
+  
+  # Approval thresholds
+  approval_criteria:
+    security_issues: 0     # No security issues allowed
+    critical_bugs: 0       # No critical bugs
+    test_coverage: ">70%"  # At least 70% coverage
+    linting_errors: 0      # No lint errors
+  
+  # Feedback template
+  feedback_format: "structured"  # structured, narrative, both
+  
+  # Auto-approval if criteria met?
+  auto_approve: false  # Require human approval
+  
+  # Recommend approval if certain conditions
+  recommend_approve_if:
+    - "no_critical_issues"
+    - "good_test_coverage"
+    - "follows_guidelines"
+
+metadata_tags:
+  - "example"
+  - "code-review"
+  - "automated"

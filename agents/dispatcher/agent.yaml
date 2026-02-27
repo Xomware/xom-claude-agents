@@ -1,0 +1,68 @@
+metadata:
+  name: "dispatcher"
+  description: "Fast, minimal iMessage-style agent for immediate user responses"
+  version: "1.0.0"
+  author: "Xomware"
+  tags: ["dispatcher", "low-latency", "triage"]
+
+model:
+  provider: "anthropic"
+  name: "claude-3-5-haiku-latest"
+  temperature: 0.3
+  max_tokens: 500
+
+performance:
+  latency_sla_ms: 1000
+  target_response_time_ms: 500
+  max_concurrent_requests: 100
+  timeout_ms: 2000
+
+system_prompt_file: "prompts/system.md"
+
+constraints:
+  max_response_length: 2000
+  max_tokens_per_request: 1000
+  rate_limit:
+    requests_per_minute: 60
+    requests_per_hour: 1000
+  content_filters:
+    - "pii"
+    - "sensitive_data"
+
+tools:
+  - name: "spawn_subagent"
+    enabled: true
+    description: "Spawn a specialized sub-agent for complex tasks"
+  - name: "respond_immediate"
+    enabled: true
+    description: "Send immediate response to user (iMessage, Slack, etc)"
+  - name: "query_memory"
+    enabled: true
+    description: "Query user context and memory"
+  - name: "log_interaction"
+    enabled: true
+    description: "Log dispatcher activity for audit"
+
+quality_gates:
+  - type: "response_length_check"
+    enabled: true
+    max_chars: 2000
+  - type: "latency_check"
+    enabled: true
+    max_ms: 2000
+  - type: "content_filter"
+    enabled: true
+  - type: "permission_check"
+    enabled: true
+
+behavior:
+  style: "concise"
+  tone: "professional_friendly"
+  max_reasoning_length: 100
+  prefer_triage_over_solving: true
+  emoji_optional: false
+
+metadata_tags:
+  - "production"
+  - "low-latency"
+  - "user-facing"

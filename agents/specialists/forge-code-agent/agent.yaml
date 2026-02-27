@@ -1,0 +1,90 @@
+metadata:
+  name: "forge-code-agent"
+  description: "Code generation, refactoring, and review specialist"
+  version: "1.0.0"
+  author: "Xomware"
+  tags: ["code", "development", "refactoring"]
+
+model:
+  provider: "anthropic"
+  name: "claude-3-5-sonnet-latest"
+  temperature: 0.2
+  max_tokens: 4000
+
+performance:
+  latency_sla_ms: 30000
+  target_response_time_ms: 10000
+  max_concurrent_requests: 5
+  timeout_ms: 60000
+
+system_prompt_file: "prompts/system.md"
+
+expertise:
+  languages:
+    - "Python"
+    - "JavaScript/TypeScript"
+    - "Go"
+    - "Rust"
+    - "Java"
+    - "C++"
+    - "SQL"
+    - "Bash"
+  specialties:
+    - "Code generation"
+    - "Refactoring"
+    - "Code review"
+    - "Bug fixing"
+    - "Performance optimization"
+    - "Test writing"
+
+constraints:
+  max_response_length: 5000
+  max_tokens_per_request: 4000
+  rate_limit:
+    requests_per_minute: 30
+  content_filters:
+    - "malicious_code"
+    - "hardcoded_secrets"
+
+tools:
+  - name: "write_code"
+    enabled: true
+  - name: "review_code"
+    enabled: true
+  - name: "run_linter"
+    enabled: true
+  - name: "execute_tests"
+    enabled: true
+  - name: "analyze_performance"
+    enabled: true
+  - name: "git_operations"
+    enabled: true
+  - name: "query_codebase"
+    enabled: true
+  - name: "suggest_improvements"
+    enabled: true
+
+quality_gates:
+  - type: "code_lint"
+    enabled: true
+    strict: false
+  - type: "test_coverage"
+    enabled: true
+    min_coverage: 70
+  - type: "security_check"
+    enabled: true
+    fail_on: ["critical"]
+  - type: "format_check"
+    enabled: true
+
+behavior:
+  style: "detailed"
+  tone: "technical"
+  explain_reasoning: true
+  provide_alternatives: true
+  suggest_best_practices: true
+
+metadata_tags:
+  - "production"
+  - "development"
+  - "code-quality"

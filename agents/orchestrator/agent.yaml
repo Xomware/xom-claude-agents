@@ -1,0 +1,100 @@
+metadata:
+  name: "orchestrator"
+  description: "Complex workflow coordinator with state management and Opus-level reasoning"
+  version: "1.0.0"
+  author: "Xomware"
+  tags: ["orchestrator", "workflow", "complex-reasoning"]
+
+model:
+  provider: "anthropic"
+  name: "claude-3-opus-latest"
+  temperature: 0.5
+  max_tokens: 4000
+
+performance:
+  async: true
+  latency_sla_ms: null  # Async, no latency SLA
+  target_completion_time_minutes: 15
+  max_concurrent_workflows: 10
+  timeout_ms: 3600000  # 1 hour
+
+system_prompt_file: "prompts/system.md"
+
+constraints:
+  max_response_length: 10000
+  max_tokens_per_request: 4000
+  rate_limit:
+    workflows_per_day: 100
+  content_filters:
+    - "pii"
+    - "sensitive_data"
+
+state_management:
+  enabled: true
+  backend: "in_memory"  # Can be upgraded to redis, postgres
+  retention_days: 30
+  auto_checkpoint: true
+  checkpoint_interval_steps: 5
+
+tools:
+  - name: "spawn_subagent"
+    enabled: true
+    description: "Spawn any specialist agent"
+  - name: "wait_for_subagent"
+    enabled: true
+    description: "Wait for subagent completion with timeout"
+  - name: "manage_workflow_state"
+    enabled: true
+    description: "Get/set workflow state"
+  - name: "execute_quality_gate"
+    enabled: true
+    description: "Run validation/quality checks"
+  - name: "escalate_to_human"
+    enabled: true
+    description: "Request human review/approval"
+  - name: "query_context"
+    enabled: true
+    description: "Query user context, project state, history"
+  - name: "log_workflow"
+    enabled: true
+    description: "Log workflow progress"
+
+quality_gates:
+  - type: "code_quality_check"
+    enabled: true
+    criteria: ["lint", "tests_pass", "coverage"]
+  - type: "permission_check"
+    enabled: true
+  - type: "cost_analysis"
+    enabled: true
+    max_estimated_cost_dollars: 50
+  - type: "security_scan"
+    enabled: true
+    fail_on: ["high_severity"]
+  - type: "approval_gate"
+    enabled: true
+    required_for: ["production_deploy", "major_changes"]
+
+workflow_patterns:
+  - name: "code_review_flow"
+    steps: 5
+    gates: ["lint", "test", "security", "approval"]
+  - name: "deployment_flow"
+    steps: 8
+    gates: ["build", "test", "security", "staging", "approval", "deploy"]
+  - name: "research_flow"
+    steps: 6
+    gates: ["sources", "relevance", "accuracy", "synthesis"]
+
+behavior:
+  style: "detailed"
+  tone: "professional"
+  max_reasoning_length: 2000
+  enable_step_logging: true
+  enable_state_visualization: true
+
+metadata_tags:
+  - "production"
+  - "complex-reasoning"
+  - "async"
+  - "workflow-management"

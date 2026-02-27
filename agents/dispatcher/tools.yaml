@@ -1,0 +1,129 @@
+tools:
+  spawn_subagent:
+    description: "Spawn a specialized sub-agent for complex tasks"
+    category: "orchestration"
+    input_schema:
+      type: "object"
+      properties:
+        agent_type:
+          type: "string"
+          enum: ["forge", "recon", "scribe", "deployer", "orchestrator"]
+          description: "Type of agent to spawn"
+        task:
+          type: "string"
+          description: "Detailed description of what the agent should do"
+        mode:
+          type: "string"
+          enum: ["run", "session"]
+          description: "Run once (run) or interactive session (session)"
+        model:
+          type: "string"
+          enum: ["haiku", "sonnet", "opus"]
+          description: "Claude model for the agent (default: sonnet)"
+      required: ["agent_type", "task"]
+    cost:
+      tokens: "varies"
+      api_calls: 1
+    permissions:
+      - "spawn_agents"
+      - "manage_subagents"
+    rate_limit: "10/minute"
+    timeout_ms: 1000
+
+  respond_immediate:
+    description: "Send immediate response to user"
+    category: "communication"
+    input_schema:
+      type: "object"
+      properties:
+        message:
+          type: "string"
+          description: "Response message (max 2000 chars)"
+        channel:
+          type: "string"
+          enum: ["imessage", "slack", "email", "web"]
+          description: "Where to send the response"
+      required: ["message"]
+    cost:
+      tokens: "0"
+      api_calls: 1
+    permissions:
+      - "send_messages"
+    rate_limit: "unlimited"
+    timeout_ms: 500
+
+  query_memory:
+    description: "Query user context, memory, and history"
+    category: "context"
+    input_schema:
+      type: "object"
+      properties:
+        query:
+          type: "string"
+          description: "What to look for in memory (e.g. 'recent deployments', 'user preferences')"
+        time_range:
+          type: "string"
+          enum: ["today", "this_week", "this_month", "all_time"]
+          description: "Time range to search (default: today)"
+        limit:
+          type: "integer"
+          description: "Max results to return (default: 10)"
+      required: ["query"]
+    cost:
+      tokens: "100-500"
+      api_calls: 1
+    permissions:
+      - "read_memory"
+      - "read_user_context"
+    rate_limit: "30/minute"
+    timeout_ms: 500
+
+  log_interaction:
+    description: "Log dispatcher interaction for audit and context"
+    category: "logging"
+    input_schema:
+      type: "object"
+      properties:
+        interaction_type:
+          type: "string"
+          enum: ["query", "triage", "response", "escalation"]
+          description: "Type of interaction"
+        summary:
+          type: "string"
+          description: "Brief summary of what happened"
+        tags:
+          type: "array"
+          items: { "type": "string" }
+          description: "Tags for categorization"
+      required: ["interaction_type", "summary"]
+    cost:
+      tokens: "0"
+      api_calls: 1
+    permissions:
+      - "write_logs"
+    rate_limit: "unlimited"
+    timeout_ms: 200
+
+# Tool groups for common scenarios
+tool_groups:
+  minimal:
+    description: "Minimum tools needed to function"
+    tools:
+      - "respond_immediate"
+      - "spawn_subagent"
+  standard:
+    description: "Standard dispatcher toolkit"
+    tools:
+      - "respond_immediate"
+      - "spawn_subagent"
+      - "query_memory"
+      - "log_interaction"
+
+# Constraints for all tools
+global_constraints:
+  max_tools_per_request: 5
+  max_concurrent_tool_calls: 2
+  timeout_ms: 2000
+  rate_limit:
+    per_minute: 60
+    per_hour: 1000

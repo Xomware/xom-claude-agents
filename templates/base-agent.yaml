@@ -1,0 +1,64 @@
+metadata:
+  name: "agent-template"
+  description: "Base template for all agents - customize for your needs"
+  version: "1.0.0"
+  author: "Your Name"
+  tags: ["template", "base"]
+
+# Model Configuration
+model:
+  provider: "anthropic"
+  name: "claude-3-5-sonnet-latest"  # Options: haiku, sonnet, opus
+  temperature: 0.3  # 0.0 = deterministic, 1.0 = creative
+  max_tokens: 1000  # Adjust based on expected output size
+
+# Performance SLA
+performance:
+  latency_sla_ms: 5000  # Target response time
+  timeout_ms: 10000     # Hard timeout
+  max_concurrent_requests: 10
+
+# System Prompt
+system_prompt_file: "prompts/system.md"
+
+# Define what this agent is good at
+expertise:
+  specialties:
+    - "Specialty 1"
+    - "Specialty 2"
+    - "Specialty 3"
+
+# Constraints & Safety
+constraints:
+  max_response_length: 2000
+  max_tokens_per_request: 1000
+  rate_limit:
+    requests_per_minute: 30
+  content_filters:
+    - "pii"  # Personal identifiable information
+    - "malicious_code"
+
+# Tools available to this agent
+# Match these with definitions in tools.yaml
+tools:
+  - name: "tool_1"
+    enabled: true
+  - name: "tool_2"
+    enabled: true
+
+# Quality gates - validation checkpoints
+quality_gates:
+  - type: "safety_check"
+    enabled: true
+  - type: "accuracy_check"
+    enabled: true
+
+# Behavioral tuning
+behavior:
+  style: "concise"  # concise, detailed, balanced
+  tone: "professional"  # professional, friendly, technical
+  explain_reasoning: false
+  provide_alternatives: false
+
+metadata_tags:
+  - "custom"

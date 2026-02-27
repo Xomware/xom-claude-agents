@@ -1,0 +1,274 @@
+tools:
+  spawn_subagent:
+    description: "Spawn a specialist agent (Forge, Recon, Scribe, Deployer)"
+    category: "orchestration"
+    input_schema:
+      type: "object"
+      properties:
+        agent_type:
+          type: "string"
+          enum: ["forge", "recon", "scribe", "deployer"]
+          description: "Type of specialist to spawn"
+        task:
+          type: "string"
+          description: "Detailed task description"
+        model:
+          type: "string"
+          enum: ["sonnet", "opus"]
+          description: "Claude model (default: sonnet)"
+        context:
+          type: "object"
+          description: "Additional context for the agent"
+      required: ["agent_type", "task"]
+    cost:
+      tokens: "varies"
+      api_calls: 1
+    permissions:
+      - "spawn_agents"
+    rate_limit: "unlimited"
+    timeout_ms: 1000
+
+  wait_for_subagent:
+    description: "Wait for subagent completion with timeout and result handling"
+    category: "orchestration"
+    input_schema:
+      type: "object"
+      properties:
+        subagent_id:
+          type: "string"
+          description: "ID of the subagent to wait for"
+        timeout_minutes:
+          type: "integer"
+          description: "Max time to wait (default: 30)"
+        on_timeout:
+          type: "string"
+          enum: ["wait", "cancel", "escalate"]
+          description: "What to do if timeout (default: escalate)"
+      required: ["subagent_id"]
+    cost:
+      tokens: "0"
+      api_calls: "0"
+    permissions:
+      - "manage_subagents"
+    rate_limit: "unlimited"
+    timeout_ms: null  # Can be very long
+
+  manage_workflow_state:
+    description: "Get, set, or update workflow state"
+    category: "state_management"
+    input_schema:
+      type: "object"
+      properties:
+        action:
+          type: "string"
+          enum: ["get", "set", "update", "checkpoint"]
+          description: "State operation"
+        workflow_id:
+          type: "string"
+          description: "Workflow ID"
+        state_key:
+          type: "string"
+          description: "State key path (e.g., 'current_step.status')"
+        state_value:
+          type: "object"
+          description: "New state value (for set/update)"
+      required: ["action"]
+    cost:
+      tokens: "50-200"
+      api_calls: 1
+    permissions:
+      - "manage_state"
+    rate_limit: "100/minute"
+    timeout_ms: 500
+
+  execute_quality_gate:
+    description: "Run quality validation/checks on task output"
+    category: "quality_assurance"
+    input_schema:
+      type: "object"
+      properties:
+        gate_type:
+          type: "string"
+          enum: ["code_quality", "security", "approval", "cost_analysis", "coverage"]
+          description: "Type of gate to execute"
+        data_to_check:
+          type: "object"
+          description: "Data to validate"
+        fail_action:
+          type: "string"
+          enum: ["fail", "warn", "request_fix"]
+          description: "Action on failure (default: fail)"
+      required: ["gate_type", "data_to_check"]
+    cost:
+      tokens: "200-1000"
+      api_calls: "1-5"
+    permissions:
+      - "execute_gates"
+    rate_limit: "50/minute"
+    timeout_ms: 5000
+
+  escalate_to_human:
+    description: "Request human review/approval"
+    category: "escalation"
+    input_schema:
+      type: "object"
+      properties:
+        escalation_type:
+          type: "string"
+          enum: ["approval", "review", "decision", "emergency"]
+          description: "Type of escalation"
+        summary:
+          type: "string"
+          description: "What needs human attention"
+        options:
+          type: "array"
+          items: { "type": "string" }
+          description: "Suggested options/decisions"
+        timeout_hours:
+          type: "integer"
+          description: "How long to wait for response (default: 4)"
+      required: ["escalation_type", "summary"]
+    cost:
+      tokens: "0"
+      api_calls: 1
+    permissions:
+      - "escalate"
+      - "send_notifications"
+    rate_limit: "unlimited"
+    timeout_ms: null  # Async, no timeout
+
+  query_context:
+    description: "Query project context, user history, and related data"
+    category: "context"
+    input_schema:
+      type: "object"
+      properties:
+        query:
+          type: "string"
+          description: "Context query (e.g., 'project status', 'recent deployments')"
+        scope:
+          type: "string"
+          enum: ["user", "project", "team", "organization"]
+          description: "Scope of query"
+        time_range:
+          type: "string"
+          enum: ["today", "week", "month", "all_time"]
+          description: "Time range"
+      required: ["query"]
+    cost:
+      tokens: "100-500"
+      api_calls: 1
+    permissions:
+      - "read_context"
+    rate_limit: "50/minute"
+    timeout_ms: 1000
+
+  log_workflow:
+    description: "Log workflow progress and decisions"
+    category: "logging"
+    input_schema:
+      type: "object"
+      properties:
+        event_type:
+          type: "string"
+          enum: ["step_started", "step_completed", "step_failed", "gate_passed", "gate_failed", "escalation", "decision"]
+          description: "Type of event"
+        workflow_id:
+          type: "string"
+          description: "Workflow ID"
+        summary:
+          type: "string"
+          description: "Event summary"
+        details:
+          type: "object"
+          description: "Additional event details"
+      required: ["event_type", "workflow_id", "summary"]
+    cost:
+      tokens: "0"
+      api_calls: 1
+    permissions:
+      - "write_logs"
+    rate_limit: "unlimited"
+    timeout_ms: 200
+
+# Workflow templates
+workflow_templates:
+  code_review:
+    steps:
+      - step: 1
+        name: "code_analysis"
+        agent: "forge"
+        timeout_minutes: 5
+      - step: 2
+        name: "security_analysis"
+        agent: "recon"
+        timeout_minutes: 5
+      - step: 3
+        name: "quality_gates"
+        gate: "code_quality"
+      - step: 4
+        name: "approval"
+        escalation: true
+      - step: 5
+        name: "merge"
+        action: "git_merge"
+
+  deployment:
+    steps:
+      - step: 1
+        name: "build"
+        agent: "forge"
+        timeout_minutes: 15
+      - step: 2
+        name: "test"
+        agent: "forge"
+        timeout_minutes: 10
+      - step: 3
+        name: "security_scan"
+        agent: "deployer"
+        timeout_minutes: 10
+      - step: 4
+        name: "staging_deploy"
+        agent: "deployer"
+        timeout_minutes: 5
+      - step: 5
+        name: "approval"
+        escalation: true
+      - step: 6
+        name: "prod_deploy"
+        agent: "deployer"
+        timeout_minutes: 10
+      - step: 7
+        name: "monitoring"
+        agent: "deployer"
+        timeout_minutes: 5
+      - step: 8
+        name: "completion"
+        action: "notify_user"
+
+  research:
+    steps:
+      - step: 1
+        name: "source_collection"
+        agent: "recon"
+        timeout_minutes: 10
+      - step: 2
+        name: "analysis"
+        agent: "recon"
+        timeout_minutes: 15
+      - step: 3
+        name: "synthesis"
+        agent: "scribe"
+        timeout_minutes: 10
+      - step: 4
+        name: "documentation"
+        agent: "scribe"
+        timeout_minutes: 10
+
+# Global constraints
+global_constraints:
+  max_concurrent_subagents: 5
+  max_workflow_duration_hours: 24
+  timeout_ms: 3600000
+  rate_limit:
+    per_day: 100

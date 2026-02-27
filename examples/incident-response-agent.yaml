@@ -1,0 +1,139 @@
+metadata:
+  name: "incident-response-agent"
+  description: "On-call incident triage, diagnosis, and response"
+  version: "1.0.0"
+  author: "Xomware"
+  tags: ["incident-response", "on-call", "example"]
+
+model:
+  provider: "anthropic"
+  name: "claude-3-opus-latest"  # Complex reasoning for incident analysis
+  temperature: 0.3
+  max_tokens: 3000
+
+performance:
+  async: true
+  latency_sla_ms: null  # No SLA, but aim for quick triage
+  timeout_ms: 300000  # 5 minutes for incident investigation
+  max_concurrent_requests: 2
+
+system_prompt_file: "prompts/system.md"
+
+expertise:
+  specialties:
+    - "Incident triage and severity assessment"
+    - "Root cause analysis"
+    - "Systems troubleshooting"
+    - "Incident communication"
+    - "Remediation execution"
+    - "Post-incident review"
+
+constraints:
+  max_response_length: 5000
+  max_tokens_per_request: 3000
+  rate_limit:
+    incidents_per_hour: 20
+  requires_approval_for:
+    - "production_changes_during_incident"
+    - "database_modifications"
+    - "service_scaling"
+
+tools:
+  - name: "query_monitoring"
+    enabled: true
+  - name: "check_logs"
+    enabled: true
+  - name: "test_connectivity"
+    enabled: true
+  - name: "query_metrics"
+    enabled: true
+  - name: "execute_diagnostic"
+    enabled: true
+  - name: "page_on_call"
+    enabled: true
+  - name: "escalate_incident"
+    enabled: true
+  - name: "execute_runbook"
+    enabled: true
+  - name: "update_status_page"
+    enabled: true
+  - name: "notify_stakeholders"
+    enabled: true
+
+quality_gates:
+  - type: "severity_assessment"
+    enabled: true
+  - type: "impact_analysis"
+    enabled: true
+  - type: "escalation_rules"
+    enabled: true
+
+behavior:
+  style: "decisive"
+  tone: "professional"
+  explain_reasoning: true
+  prioritize_speed: true
+
+incident_config:
+  # Severity levels
+  severity_levels:
+    sev1:  # Critical
+      description: "Service completely down"
+      response_time_minutes: 5
+      on_call_notification: "immediate"
+      escalation: "yes"
+    sev2:  # Major
+      description: "Major degradation"
+      response_time_minutes: 15
+      on_call_notification: "immediate"
+      escalation: "maybe"
+    sev3:  # Minor
+      description: "Minor impact"
+      response_time_minutes: 30
+      on_call_notification: "no"
+      escalation: "no"
+  
+  # Incident lifecycle
+  stages:
+    - "detection"          # Alert triggered
+    - "triage"            # Assess severity and impact
+    - "diagnosis"         # Root cause analysis
+    - "remediation"       # Execute fix
+    - "verification"      # Confirm resolution
+    - "communication"     # Notify stakeholders
+    - "post_mortem"       # Learn from incident
+  
+  # Triage process
+  triage_questions:
+    - "What service is affected?"
+    - "How many customers impacted?"
+    - "What's the current trend (improving/degrading/stable)?"
+    - "Do we have a known runbook?"
+    - "What's the likely root cause?"
+    - "What's the estimated time to fix?"
+  
+  # Auto-remediation triggers
+  auto_remediation:
+    high_cpu_usage: "scale_out"
+    disk_full: "escalate"
+    database_connection_pool_exhausted: "restart_app_servers"
+    cache_miss_rate_high: "clear_cache"
+  
+  # Notification rules
+  notifications:
+    sev1: ["slack_channel", "page_oncall", "sms"]
+    sev2: ["slack_channel", "page_oncall"]
+    sev3: ["slack_channel"]
+  
+  # Runbooks available
+  runbooks:
+    - "database-recovery"
+    - "service-restart"
+    - "cache-flush"
+    - "dns-failover"
+    - "circuit-breaker-reset"
+
+metadata_tags:
+  - "example"
+  - "incident-response"
+  - "on-call"

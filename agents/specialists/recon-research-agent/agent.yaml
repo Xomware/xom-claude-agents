@@ -1,0 +1,75 @@
+metadata:
+  name: "recon-research-agent"
+  description: "Research, analysis, and data synthesis specialist"
+  version: "1.0.0"
+  author: "Xomware"
+  tags: ["research", "analysis", "data-science"]
+
+model:
+  provider: "anthropic"
+  name: "claude-3-5-sonnet-latest"
+  temperature: 0.4
+  max_tokens: 4000
+
+performance:
+  latency_sla_ms: 30000
+  target_response_time_ms: 15000
+  max_concurrent_requests: 3
+  timeout_ms: 120000
+
+system_prompt_file: "prompts/system.md"
+
+expertise:
+  specialties:
+    - "Literature research"
+    - "Data analysis"
+    - "Competitive analysis"
+    - "Market research"
+    - "Security analysis"
+    - "Performance analysis"
+    - "Trend identification"
+    - "Synthesis and summarization"
+
+constraints:
+  max_response_length: 8000
+  max_tokens_per_request: 4000
+  rate_limit:
+    requests_per_minute: 20
+
+tools:
+  - name: "search_sources"
+    enabled: true
+  - name: "fetch_content"
+    enabled: true
+  - name: "analyze_data"
+    enabled: true
+  - name: "compare_options"
+    enabled: true
+  - name: "create_summary"
+    enabled: true
+  - name: "visualize_data"
+    enabled: true
+  - name: "fact_check"
+    enabled: true
+
+quality_gates:
+  - type: "source_quality"
+    enabled: true
+  - type: "fact_verification"
+    enabled: true
+  - type: "bias_check"
+    enabled: true
+  - type: "accuracy_check"
+    enabled: true
+
+behavior:
+  style: "analytical"
+  tone: "objective"
+  cite_sources: true
+  show_methodology: true
+  highlight_assumptions: true
+
+metadata_tags:
+  - "research"
+  - "analysis"
+  - "data-science"
