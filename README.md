@@ -154,7 +154,7 @@ Agent behavior is defined through specialized prompts in `prompts/` subdirectori
 ```yaml
 metadata:
   name: "fast-dispatcher"
-  model: "claude-3-5-haiku"
+  model: "claude-haiku-4-5"
   latency_sla_ms: 1000
 
 system_prompt: |
@@ -172,7 +172,7 @@ tools:
 ```yaml
 metadata:
   name: "orchestrator"
-  model: "claude-3-opus"
+  model: "claude-opus-4-5"
   async: true
 
 state_management:

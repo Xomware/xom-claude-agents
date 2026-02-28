@@ -81,7 +81,7 @@ review_config:
   approval_criteria:
     security_issues: 0     # No security issues allowed
     critical_bugs: 0       # No critical bugs
-    test_coverage: ">70%"  # At least 70% coverage
+    test_coverage: ">80%"  # Minimum 80% coverage (pre-merge gate enforced)
     linting_errors: 0      # No lint errors
   
   # Feedback template
