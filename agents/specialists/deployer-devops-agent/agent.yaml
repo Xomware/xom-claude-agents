@@ -7,9 +7,12 @@ metadata:
 
 model:
   provider: "anthropic"
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-6"
   temperature: 0.2
   max_tokens: 4000
+  routing_enabled: true
+  routing_config: "../../../templates/model-routing.yaml"
+  routing_rationale: "DevOps tasks vary widely; Sonnet default for provisioning/deployment, route status_check and board_update subtasks to Haiku"
 
 performance:
   latency_sla_ms: 30000
@@ -95,3 +98,12 @@ metadata_tags:
   - "production"
   - "infrastructure"
   - "high-risk"
+
+cost_controls:
+  track_model_usage: true
+  alert_if_opus_percent_exceeds: 15
+  monthly_budget_usd: 50
+  preferred_model_target:
+    haiku_min_percent: 40
+    sonnet_max_percent: 50
+    opus_max_percent: 10
