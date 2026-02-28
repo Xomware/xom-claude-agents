@@ -509,9 +509,63 @@ quality_gates:
 
 ---
 
+---
+
+## Cost-Aware Model Routing
+
+All agents in this framework route LLM calls through the **cost-router** agent to ensure optimal model selection and budget enforcement.
+
+### Model Tiers
+
+| Model | When to Use | Cost Relative to Haiku |
+|-------|-------------|----------------------|
+| **Haiku** | Lookup, status, format, triage, routing | 1× (baseline) |
+| **Sonnet** | Code, analysis, debugging, research | ~19× |
+| **Opus** | Architecture, critical decisions, complex planning | ~94× |
+
+**Target distribution: ~60% Haiku · ~30% Sonnet · ~10% Opus**
+
+### Routing Decision (Quick Reference)
+
+```
+Simple lookup / status / format  →  Haiku
+Code / analysis / research       →  Sonnet
+Architecture / critical / RCA    →  Opus
+```
+
+### Cost-Router Agent
+
+The `cost-router` agent intercepts all LLM calls and:
+- Scores request complexity (0–10)
+- Selects cheapest capable model
+- Enforces per-session budget limits ($0.50 default)
+- Caches responses to eliminate redundant API calls
+- Emits cost telemetry for monitoring
+
+**Files:**
+- `agents/cost-router/AGENT.md` — Full agent definition
+- `agents/cost-router/routing-rules.md` — Complete routing rule set
+- `docs/cost-aware-routing.md` — Routing decision tree, cost tracking, caching strategy
+
+### Budget Enforcement
+
+Each session has a $0.50 default budget. The cost-router will:
+- Warn at 70% utilization
+- Downgrade model if a call would exceed per-call limit ($0.25)
+- Reject calls that would exceed session limit
+
+Override budget in agent config:
+```yaml
+session:
+  budget_usd: 2.00  # for high-value, complex sessions
+```
+
+---
+
 ## Support & Resources
 
 - **Docs**: `docs/agent-development.md`
+- **Cost Routing**: `docs/cost-aware-routing.md`
 - **Examples**: `examples/`
 - **Templates**: `templates/`
 - **Customization**: `docs/customization-guide.md`
