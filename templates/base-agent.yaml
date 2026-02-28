@@ -53,6 +53,20 @@ quality_gates:
   - type: "accuracy_check"
     enabled: true
 
+# Hooks — deterministic quality gates
+hooks:
+  pre_pr:
+    enabled: true
+    gates: [lint, test, type_check, docs_check]
+  pre_commit:
+    enabled: true
+    gates: [format, secrets_scan]
+  post_merge:
+    enabled: true
+    actions: [sync_board, notify]
+  on_failure: block   # block | warn | log
+  skip_hooks: false   # Never skip in production
+
 # Behavioral tuning
 behavior:
   style: "concise"  # concise, detailed, balanced
