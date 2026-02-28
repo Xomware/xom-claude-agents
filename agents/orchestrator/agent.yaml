@@ -37,6 +37,10 @@ state_management:
   checkpoint_interval_steps: 5
 
 tools:
+  # MCP Discipline — enforced via scripts/mcp-audit.sh
+  max_enabled: 10
+  audit_frequency: "weekly"
+
   - name: "spawn_subagent"
     enabled: true
     description: "Spawn any specialist agent"

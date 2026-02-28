@@ -41,6 +41,10 @@ constraints:
     requests_per_minute: 30
 
 tools:
+  # MCP Discipline — enforced via scripts/mcp-audit.sh
+  max_enabled: 10
+  audit_frequency: "weekly"
+
   - name: "write_documentation"
     enabled: true
   - name: "review_documentation"

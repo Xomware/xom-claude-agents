@@ -55,6 +55,10 @@ constraints:
     - "cost_exceeding_threshold"
 
 tools:
+  # MCP Discipline — enforced via scripts/mcp-audit.sh
+  max_enabled: 10
+  audit_frequency: "weekly"
+
   - name: "provision_infrastructure"
     enabled: true
   - name: "deploy_application"
