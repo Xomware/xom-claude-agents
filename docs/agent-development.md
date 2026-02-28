@@ -30,7 +30,7 @@ metadata:
   version: "1.0.0"
 
 model:
-  name: "claude-3-5-sonnet-latest"  # Choose Haiku/Sonnet/Opus
+  name: "claude-sonnet-4-5"  # Choose Haiku/Sonnet/Opus
   temperature: 0.3
   max_tokens: 2000
 
@@ -101,9 +101,9 @@ Choose based on your needs:
 ```yaml
 model:
   provider: "anthropic"
-  name: "claude-3-5-haiku-latest"    # Fast, cheap
-         "claude-3-5-sonnet-latest"   # Balanced (recommended)
-         "claude-3-opus-latest"       # Powerful, slow
+  name: "claude-haiku-4-5"    # Fast, cheap
+         "claude-sonnet-4-5"   # Balanced (recommended)
+         "claude-opus-4-5"       # Powerful, slow
   
   temperature: 0.0                # Deterministic (0.0)
               0.5                 # Balanced (0.5)
@@ -451,7 +451,7 @@ Fast, routes to specialists:
 
 ```yaml
 model:
-  name: "claude-3-5-haiku-latest"
+  name: "claude-haiku-4-5"
   max_tokens: 500
 
 performance:
@@ -469,7 +469,7 @@ Expert in domain:
 
 ```yaml
 model:
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-5"
   max_tokens: 2000
 
 performance:
@@ -487,7 +487,7 @@ Complex workflows, Opus reasoning:
 
 ```yaml
 model:
-  name: "claude-3-opus-latest"
+  name: "claude-opus-4-5"
   max_tokens: 4000
 
 state_management:
@@ -499,6 +499,163 @@ tools:
   - manage_workflow_state
   - execute_quality_gate
 ```
+
+---
+
+---
+
+## Hooks Framework
+
+Hooks are **deterministic code** that runs before and after every LLM invocation. They are the most cost-effective quality mechanism in the stack — zero LLM tokens, near-zero latency.
+
+### Pre-Invoke Hooks
+
+Run before the LLM is called:
+
+```yaml
+hooks:
+  pre_invoke:
+    - name: "route_model"
+      description: "Classify task → assign Haiku/Sonnet/Opus based on complexity"
+      enabled: true
+      routing_rules:
+        simple_lookup: "claude-haiku-4-5"
+        code_or_analysis: "claude-sonnet-4-5"
+        complex_planning: "claude-opus-4-5"
+    - name: "validate_input"
+      description: "Schema validation — fail fast, don't spend tokens on bad input"
+      enabled: true
+    - name: "check_permissions"
+      description: "ACL enforcement before any LLM cost is incurred"
+      enabled: true
+    - name: "rate_limit_check"
+      description: "Enforce per-agent rate limits deterministically"
+      enabled: true
+    - name: "mcp_scope_check"
+      description: "Verify active MCP count ≤10 before invocation"
+      enabled: true
+```
+
+### Post-Invoke Hooks
+
+Run after the LLM responds:
+
+```yaml
+hooks:
+  post_invoke:
+    - name: "output_schema_check"
+      description: "Validate output shape and required fields"
+      enabled: true
+    - name: "cost_tracker"
+      description: "Log token usage, flag over-budget runs"
+      enabled: true
+    - name: "quality_gate_runner"
+      description: "Run pre-merge gates (compile, coverage, lint, security)"
+      enabled: true
+```
+
+### Why Hooks Matter
+
+| Problem | Without Hooks | With Hooks |
+|---------|--------------|-----------|
+| Wrong model chosen | Pays Opus price for Haiku task | Routes automatically, saves ~90% |
+| Bad input | LLM returns confusing error | Fails in <1ms, no token cost |
+| Coverage <80% | Merges bad code | Blocks merge deterministically |
+| >10 MCPs active | Confused model, slow responses | Blocked before invocation |
+
+---
+
+## MCP Tool Discipline
+
+**Rule: Maximum 10 MCP tools active at any time.**
+
+Context windows fill up. Excess tools confuse models, increase hallucination risk, and inflate latency. Every agent must declare its MCP whitelist.
+
+### Configuration
+
+```yaml
+mcp_tools:
+  max_active: 10                  # Hard ceiling — never exceed
+  whitelist:                      # Default active tools for this agent
+    - "github"                    # Always-on for code agents
+    - "supabase"                  # Always-on for data agents
+    - "slack"                     # Always-on for notification agents
+  temp_tool_allowed: true         # Can request 1 additional temp tool
+  temp_tool_auto_remove: true     # Auto-removed when task completes
+```
+
+### Standard MCP Whitelist by Agent Type
+
+| Agent | Default MCPs | Max Total |
+|-------|-------------|-----------|
+| Dispatcher (Boris) | github, slack | ≤10 |
+| Forge (Code) | github, supabase | ≤10 |
+| Recon (Research) | github, slack | ≤10 |
+| Scribe (Docs) | github, slack | ≤10 |
+| Deployer (DevOps) | github, aws, slack | ≤10 |
+| Orchestrator | github, slack, aws, supabase | ≤10 |
+
+### Requesting a Temp Tool
+
+```yaml
+# In task spec, agent may request 1 temp tool:
+temp_tool_request:
+  tool: "stripe"
+  reason: "Processing refund for this task"
+  # auto_remove: true (default)
+```
+
+---
+
+## Model Routing Decision Tree
+
+Use this to decide which model tier to assign. The `route_model` pre-invoke hook enforces this automatically when configured.
+
+```
+Task received
+    ├─ Simple: lookup, formatting, short Q&A, status check?
+    │  └─ claude-haiku-4-5   (~$0.01/task, <2 min)
+    │
+    ├─ Medium: code gen, refactoring, analysis, research?
+    │  └─ claude-sonnet-4-5  (~$0.05/task, <5 min)
+    │
+    └─ Complex: architecture, multi-step planning, long reasoning?
+       └─ claude-opus-4-5    (~$0.15/task, <10 min)
+
+Target distribution: ~60% Haiku · ~30% Sonnet · ~10% Opus
+Expected savings vs. all-Sonnet baseline: ~50%
+```
+
+### Cost Example (100 tasks/day)
+
+| Approach | Breakdown | Daily Cost |
+|----------|-----------|-----------|
+| All Sonnet (old) | 100 × $0.05 | $5.00 |
+| Routed (new) | 60 Haiku + 30 Sonnet + 10 Opus | $2.50 |
+| **Savings** | | **50%** |
+
+---
+
+## Pre-Merge Gates (Required)
+
+Every PR that agents produce must pass all four gates before auto-merge:
+
+```yaml
+quality_gates:
+  pre_merge:
+    - type: "compile_check"     # Code builds without errors
+      fail_action: "block_merge"
+    - type: "test_coverage"     # ≥80% unit test coverage
+      min_coverage: 0.80
+      fail_action: "block_merge"
+    - type: "lint"              # Zero lint errors (TS/SCSS/language-specific)
+      fail_action: "block_merge"
+    - type: "security_scan"     # No critical vulns; prompt injection scan
+      fail_on: ["critical", "prompt_injection"]
+      fail_action: "block_merge"
+```
+
+> **Note on coverage**: The legacy threshold was 70%. This has been raised to **80%** across all agents. Update any older configs that still reference 70%.
 
 ---
 

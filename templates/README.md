@@ -76,7 +76,7 @@ metadata:
   author: "Your Name"
 
 model:
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-5"
   temperature: 0.3
 
 expertise:
@@ -139,7 +139,7 @@ When customizing, choose the right model:
 
 ```yaml
 model:
-  name: "claude-3-5-haiku-latest"
+  name: "claude-haiku-4-5"
 ```
 - ✓ Use for: Fast responses, simple tasks
 - ✓ Latency: <1 second
@@ -148,7 +148,7 @@ model:
 
 ```yaml
 model:
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-5"
 ```
 - ✓ Use for: General purpose (recommended)
 - ✓ Latency: <10 seconds
@@ -158,7 +158,7 @@ model:
 
 ```yaml
 model:
-  name: "claude-3-opus-latest"
+  name: "claude-opus-4-5"
 ```
 - ✓ Use for: Complex reasoning, workflows
 - ✓ Latency: <30 seconds
@@ -186,7 +186,7 @@ metadata:
 Adjust for your domain:
 ```yaml
 model:
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-5"
   temperature: 0.3              # Lower = consistent
                                 # Higher = creative
   max_tokens: 1000              # Output size limit
@@ -240,7 +240,7 @@ metadata:
   description: "Customer support specialist"
 
 model:
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-5"
   temperature: 0.2              # Consistent responses
 
 expertise:
@@ -268,7 +268,7 @@ metadata:
   description: "Data analysis and visualization specialist"
 
 model:
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-5"
   temperature: 0.3
 
 expertise:
@@ -297,7 +297,7 @@ metadata:
   description: "Professional content writing specialist"
 
 model:
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-5"
   temperature: 0.4              # Some variation
 
 expertise:

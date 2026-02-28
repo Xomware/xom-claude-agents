@@ -2,12 +2,61 @@
 
 Reference guide for all agents in the xom-claude-agents framework.
 
+---
+
+## Best Practices: The Four Pillars
+
+These four patterns are required across all Xomware agents. Detailed specs are in each section below.
+
+### 1. Hooks Framework
+Deterministic code that runs **before and after** every LLM call. No LLM cost. Near-zero latency. Enforces routing, validation, and rate limits without spending tokens.
+
+### 2. MCP Discipline (Max 10)
+Never enable more than **10 MCP tools** simultaneously. Excess context confuses models and inflates latency. Agents whitelist their defaults; extra tools are temp-granted and auto-removed.
+
+### 3. Model Routing Decision Tree
+```
+Task type                  → Model              Approx cost   Latency
+────────────────────────────────────────────────────────────────────
+Simple lookup / Q&A        → claude-haiku-4-5   ~$0.01/task   <2 min
+Code gen / refactor        → claude-sonnet-4-5  ~$0.05/task   <5 min
+Complex planning / arch    → claude-opus-4-5    ~$0.15/task   <10 min
+
+Target: ~60% Haiku · ~30% Sonnet · ~10% Opus
+Cost impact: ~50% reduction vs all-Sonnet baseline
+```
+
+### 4. Deterministic Pre-Merge Gates
+All four gates must pass before any PR is auto-merged:
+1. **Compile** — Code builds without errors
+2. **Coverage** — Unit test coverage ≥80% (was 70% — updated)
+3. **Lint** — Zero TS/SCSS/language lint errors
+4. **Security** — No critical vulnerabilities; prompt injection scan passes
+
+---
+
+## The Xomware Agent Team
+
+| Agent | Role | Model | Channel |
+|-------|------|-------|---------|
+| **Jarvis** | Lead Orchestrator | Opus | Webchat/Discord |
+| **Boris** | iMessage Dispatcher | Haiku | iMessage |
+| **Forge** | Code & Build Specialist | Sonnet | Sub-agent |
+| **Recon** | Research & Analysis | Sonnet | Sub-agent |
+| **Scribe** | Docs & Memory | Sonnet | Sub-agent |
+| **Deployer** | CI/CD & Infra | Sonnet | Sub-agent |
+| **Winston** | CI/CD Watchdog (cron 4×/day) | Haiku | Cron |
+| **Stormy** | Memory & Docs Curator (10pm) | Sonnet | Cron |
+| **Debo** | Infrastructure Specialist | Sonnet | Sub-agent |
+
+---
+
 ## Core Agents
 
 ### 1. Dispatcher (Boris)
 
 **Purpose**: Fast, minimal agent for immediate user responses  
-**Model**: Claude 3.5 Haiku  
+**Model**: Claude Haiku 4.5  
 **Latency SLA**: <1 second  
 
 **Responsibilities**:
@@ -45,7 +94,7 @@ Dispatcher: "Spawning Forge agent. I'll check in once it's done."
 ### 2. Orchestrator (Opus-level)
 
 **Purpose**: Complex multi-step workflows with state management  
-**Model**: Claude 3 Opus  
+**Model**: Claude Opus 4.5  
 **Latency**: Minutes to hours (async)  
 
 **Responsibilities**:
@@ -99,7 +148,7 @@ Code Review Workflow:
 ### 3. Forge (Code Agent)
 
 **Purpose**: Code generation, refactoring, and review  
-**Model**: Claude 3.5 Sonnet  
+**Model**: Claude Sonnet 4.5  
 **Latency SLA**: <30 seconds  
 
 **Expertise**:
@@ -125,7 +174,7 @@ Code Review Workflow:
 
 **Quality Gates**:
 - Code linting ✓
-- Test coverage (min 70%)
+- Test coverage (min 80%)
 - Security checks (fail on critical)
 - Format validation
 
@@ -153,7 +202,7 @@ Rating: Needs Work — Fix before merging
 ### 4. Recon (Research Agent)
 
 **Purpose**: Literature research and data synthesis  
-**Model**: Claude 3.5 Sonnet  
+**Model**: Claude Sonnet 4.5  
 **Latency**: <30 seconds per query  
 
 **Specialties**:
@@ -217,7 +266,7 @@ Rating: Needs Work — Fix before merging
 ### 5. Scribe (Documentation Agent)
 
 **Purpose**: Technical writing and documentation  
-**Model**: Claude 3.5 Sonnet  
+**Model**: Claude Sonnet 4.5  
 **Latency**: <30 seconds  
 
 **Specialties**:
@@ -284,7 +333,7 @@ Visit your app URL
 ### 6. Deployer (DevOps Agent)
 
 **Purpose**: Infrastructure and deployment  
-**Model**: Claude 3.5 Sonnet  
+**Model**: Claude Sonnet 4.5  
 **Latency**: <30 seconds for planning, varies for execution  
 
 **Expertise**:
@@ -359,7 +408,7 @@ metadata:
   version: "1.0.0"
 
 model:
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-5"
   temperature: 0.3
   max_tokens: 1000
 
@@ -378,7 +427,7 @@ metadata:
   description: "Domain expert agent"
 
 model:
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-5"
 
 expertise:
   domain: "Your Domain"
@@ -452,9 +501,9 @@ Literature research and data synthesis:
 ### Model Selection
 ```yaml
 model:
-  name: "claude-3-5-haiku-latest"    # Fast, cheap
-         "claude-3-5-sonnet-latest"   # Balanced
-         "claude-3-opus-latest"       # Powerful
+  name: "claude-haiku-4-5"    # Fast, cheap
+         "claude-sonnet-4-5"   # Balanced
+         "claude-opus-4-5"       # Powerful
 ```
 
 ### Performance
@@ -509,63 +558,9 @@ quality_gates:
 
 ---
 
----
-
-## Cost-Aware Model Routing
-
-All agents in this framework route LLM calls through the **cost-router** agent to ensure optimal model selection and budget enforcement.
-
-### Model Tiers
-
-| Model | When to Use | Cost Relative to Haiku |
-|-------|-------------|----------------------|
-| **Haiku** | Lookup, status, format, triage, routing | 1× (baseline) |
-| **Sonnet** | Code, analysis, debugging, research | ~19× |
-| **Opus** | Architecture, critical decisions, complex planning | ~94× |
-
-**Target distribution: ~60% Haiku · ~30% Sonnet · ~10% Opus**
-
-### Routing Decision (Quick Reference)
-
-```
-Simple lookup / status / format  →  Haiku
-Code / analysis / research       →  Sonnet
-Architecture / critical / RCA    →  Opus
-```
-
-### Cost-Router Agent
-
-The `cost-router` agent intercepts all LLM calls and:
-- Scores request complexity (0–10)
-- Selects cheapest capable model
-- Enforces per-session budget limits ($0.50 default)
-- Caches responses to eliminate redundant API calls
-- Emits cost telemetry for monitoring
-
-**Files:**
-- `agents/cost-router/AGENT.md` — Full agent definition
-- `agents/cost-router/routing-rules.md` — Complete routing rule set
-- `docs/cost-aware-routing.md` — Routing decision tree, cost tracking, caching strategy
-
-### Budget Enforcement
-
-Each session has a $0.50 default budget. The cost-router will:
-- Warn at 70% utilization
-- Downgrade model if a call would exceed per-call limit ($0.25)
-- Reject calls that would exceed session limit
-
-Override budget in agent config:
-```yaml
-session:
-  budget_usd: 2.00  # for high-value, complex sessions
-```
-
----
-
 ## Support & Resources
 
 - **Docs**: `docs/agent-development.md`
-- **Cost Routing**: `docs/cost-aware-routing.md`
 - **Examples**: `examples/`
 - **Templates**: `templates/`
 - **Customization**: `docs/customization-guide.md`

@@ -7,7 +7,7 @@ metadata:
 
 model:
   provider: "anthropic"
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-5"
   temperature: 0.2
   max_tokens: 3000
 
@@ -81,7 +81,7 @@ review_config:
   approval_criteria:
     security_issues: 0     # No security issues allowed
     critical_bugs: 0       # No critical bugs
-    test_coverage: ">70%"  # At least 70% coverage
+    test_coverage: ">80%"  # Minimum 80% coverage (pre-merge gate enforced)
     linting_errors: 0      # No lint errors
   
   # Feedback template

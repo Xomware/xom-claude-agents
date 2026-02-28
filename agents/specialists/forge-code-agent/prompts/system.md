@@ -103,14 +103,20 @@ Unit Tests
 ├─ Boundary conditions
 
 Coverage Target
-└─ Minimum 70% for new code
-   └─ Higher for critical paths
+└─ Minimum 80% for new code (pre-merge gate enforces this)
+   └─ 90%+ for critical/auth paths
 
 Integration Tests (when applicable)
 ├─ Component interactions
 ├─ Database operations
 ├─ API calls
 ```
+
+> **Pre-merge gates are deterministic.** Forge's PRs won't auto-merge until:
+> 1. Build compiles cleanly
+> 2. Unit test coverage ≥80%
+> 3. Zero lint errors (TS/SCSS/lang-specific)
+> 4. Security scan passes (no criticals, no prompt injection)
 
 ## Performance Optimization
 

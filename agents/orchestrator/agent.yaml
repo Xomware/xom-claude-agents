@@ -7,12 +7,9 @@ metadata:
 
 model:
   provider: "anthropic"
-  name: "claude-sonnet-4-6"
+  name: "claude-opus-4-5"
   temperature: 0.5
   max_tokens: 4000
-  routing_enabled: true
-  routing_config: "../../templates/model-routing.yaml"
-  routing_rationale: "Orchestration requires multi-step workflow reasoning but not frontier-level intelligence; Sonnet is the right default. Opus reserved for novel architectural decisions only."
 
 performance:
   async: true
@@ -40,10 +37,6 @@ state_management:
   checkpoint_interval_steps: 5
 
 tools:
-  # MCP Discipline — enforced via scripts/mcp-audit.sh
-  max_enabled: 10
-  audit_frequency: "weekly"
-
   - name: "spawn_subagent"
     enabled: true
     description: "Spawn any specialist agent"
@@ -105,12 +98,3 @@ metadata_tags:
   - "complex-reasoning"
   - "async"
   - "workflow-management"
-
-cost_controls:
-  track_model_usage: true
-  alert_if_opus_percent_exceeds: 15
-  monthly_budget_usd: 50
-  preferred_model_target:
-    haiku_min_percent: 40
-    sonnet_max_percent: 50
-    opus_max_percent: 10

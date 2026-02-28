@@ -1,23 +1,29 @@
 metadata:
   name: "specialist-agent-template"
   description: "Template for specialist agents - extend for your domain"
-  version: "1.0.0"
+  version: "2.0.0"
   author: "Your Name"
   tags: ["specialist", "template"]
 
-# Model Configuration
-# Choose based on complexity:
-# - Haiku: simple tasks, fast responses (<1s)
-# - Sonnet: balanced, good for most specialists
-# - Opus: complex reasoning, multi-step workflows
+# ─────────────────────────────────────────────────────────────────
+# MODEL ROUTING DECISION TREE (enforced by hooks pre_invoke)
+# ─────────────────────────────────────────────────────────────────
+# Task type           → Model              Cost      Latency
+# ─────────────────────────────────────────────────────────────────
+# Simple lookup       → claude-haiku-4-5   ~$0.01    <2 min
+# Code / analysis     → claude-sonnet-4-5  ~$0.05    <5 min
+# Complex planning    → claude-opus-4-5    ~$0.15    <10 min
+#
+# Target distribution: ~60% Haiku · ~30% Sonnet · ~10% Opus
+# Default for most specialists is Sonnet. Override as needed.
+# ─────────────────────────────────────────────────────────────────
 model:
   provider: "anthropic"
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-5"        # claude-haiku-4-5 | claude-sonnet-4-5 | claude-opus-4-5
   temperature: 0.3
   max_tokens: 2000
 
-# Performance SLA
-# Specialists typically have more generous timeouts than dispatchers
+# Performance SLA — Specialists have more generous timeouts than dispatchers
 performance:
   latency_sla_ms: 30000
   timeout_ms: 60000
@@ -33,8 +39,56 @@ expertise:
     - "Key specialty 1"
     - "Key specialty 2"
     - "Key specialty 3"
-  certifications: []  # Optional: list relevant knowledge
-  constraints: []     # Domain-specific constraints
+  certifications: []              # Optional: list relevant knowledge
+  constraints: []                 # Domain-specific constraints
+
+# ─────────────────────────────────────────────────────────────────
+# HOOKS FRAMEWORK — Deterministic logic BEFORE & AFTER LLM calls
+# Hooks run as pure code: zero LLM cost, near-zero latency.
+# ─────────────────────────────────────────────────────────────────
+hooks:
+  pre_invoke:
+    - name: "route_model"
+      description: "Classify task → assign optimal model tier"
+      enabled: true
+      routing_rules:
+        simple_lookup: "claude-haiku-4-5"
+        code_or_analysis: "claude-sonnet-4-5"
+        complex_planning: "claude-opus-4-5"
+    - name: "validate_input"
+      description: "Schema + type validation before spending tokens"
+      enabled: true
+    - name: "check_permissions"
+      description: "ACL check — block unauthorized callers pre-LLM"
+      enabled: true
+    - name: "rate_limit_check"
+      description: "Enforce per-specialist rate limits"
+      enabled: true
+    - name: "mcp_scope_check"
+      description: "Confirm active MCPs ≤10 before invocation"
+      enabled: true
+  post_invoke:
+    - name: "output_schema_check"
+      description: "Validate output shape and required fields"
+      enabled: true
+    - name: "cost_tracker"
+      description: "Track token usage and flag if over budget"
+      enabled: true
+    - name: "quality_gate_runner"
+      description: "Run domain-specific post-invoke quality checks"
+      enabled: true
+
+# ─────────────────────────────────────────────────────────────────
+# MCP TOOL DISCIPLINE — Max 10 active MCPs at any time
+# Excess context = confused models + slower responses
+# ─────────────────────────────────────────────────────────────────
+mcp_tools:
+  max_active: 10                  # Hard ceiling — never exceed
+  whitelist:                      # Default active MCPs (≤10 total)
+    - "github"
+    - "slack"
+  temp_tool_allowed: true         # Request 1 additional tool for a task
+  temp_tool_auto_remove: true     # Auto-removed when task completes
 
 # Constraints & Safety
 constraints:
@@ -48,8 +102,7 @@ constraints:
     - "pii"
     - "sensitive_data"
 
-# Specialist Tools
-# Define tools specific to this specialist
+# Specialist Tools — define tools specific to this specialist
 tools:
   - name: "primary_tool"
     enabled: true
@@ -58,32 +111,50 @@ tools:
   - name: "validation_tool"
     enabled: true
 
-# Quality Gates - Specialist-specific validation
+# ─────────────────────────────────────────────────────────────────
+# PRE-MERGE GATES — ALL must pass before merge is allowed
+# These are deterministic checks (no LLM). Fast and cheap.
+# ─────────────────────────────────────────────────────────────────
 quality_gates:
-  - type: "domain_specific_check"
-    enabled: true
-  - type: "accuracy_verification"
-    enabled: true
-  - type: "best_practices_check"
-    enabled: true
+  pre_merge:
+    - type: "compile_check"
+      description: "Code must compile/build cleanly"
+      enabled: true
+      fail_action: "block_merge"
+    - type: "test_coverage"
+      description: "Unit test coverage must be ≥80%"
+      enabled: true
+      min_coverage: 0.80            # Up from legacy 70%
+      fail_action: "block_merge"
+    - type: "lint"
+      description: "Zero linting errors (TS/SCSS/lang-specific)"
+      enabled: true
+      fail_action: "block_merge"
+    - type: "security_scan"
+      description: "No critical vulns; includes prompt injection scan"
+      enabled: true
+      fail_on: ["critical", "prompt_injection"]
+      fail_action: "block_merge"
+  domain_specific:
+    - type: "domain_specific_check"
+      enabled: true
+    - type: "accuracy_verification"
+      enabled: true
+    - type: "best_practices_check"
+      enabled: true
 
 # Specialist Behavior
 behavior:
-  style: "detailed"           # detailed, balanced, concise
-  tone: "professional"        # professional, friendly, technical
-  explain_reasoning: true     # Always explain your approach
-  provide_alternatives: true  # Show multiple solutions
-  cite_sources: false         # Include references?
+  style: "detailed"               # detailed, balanced, concise
+  tone: "professional"            # professional, friendly, technical
+  explain_reasoning: true         # Always explain your approach
+  provide_alternatives: true      # Show multiple solutions
+  cite_sources: false             # Include references?
 
 # Specialist-specific configuration
 specialist_config:
-  # How to handle edge cases
-  fallback_behavior: "escalate"  # "escalate", "default", "ask"
-  
-  # Self-correction
+  fallback_behavior: "escalate"   # "escalate", "default", "ask"
   enable_reflection: true
-  
-  # Documentation
   include_examples: true
   example_count: 2
 

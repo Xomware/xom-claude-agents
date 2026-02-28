@@ -10,9 +10,6 @@ model:
   name: "claude-haiku-4-5"
   temperature: 0.3
   max_tokens: 500
-  routing_enabled: true
-  routing_config: "../../templates/model-routing.yaml"
-  routing_rationale: "Dispatcher handles only triage and classification — Haiku is always sufficient and 10x cheaper than Sonnet"
 
 performance:
   latency_sla_ms: 1000
@@ -33,10 +30,6 @@ constraints:
     - "sensitive_data"
 
 tools:
-  # MCP Discipline — enforced via scripts/mcp-audit.sh
-  max_enabled: 10
-  audit_frequency: "weekly"
-
   - name: "spawn_subagent"
     enabled: true
     description: "Spawn a specialized sub-agent for complex tasks"
@@ -73,12 +66,3 @@ metadata_tags:
   - "production"
   - "low-latency"
   - "user-facing"
-
-cost_controls:
-  track_model_usage: true
-  alert_if_opus_percent_exceeds: 15
-  monthly_budget_usd: 50
-  preferred_model_target:
-    haiku_min_percent: 40
-    sonnet_max_percent: 50
-    opus_max_percent: 10

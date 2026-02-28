@@ -12,7 +12,7 @@ Want even faster responses? Switch to Haiku:
 
 ```yaml
 model:
-  name: "claude-3-5-haiku-latest"
+  name: "claude-haiku-4-5"
   max_tokens: 300  # Even more concise
 
 performance:
@@ -53,7 +53,7 @@ metadata:
   description: "Fast dispatcher for Slack requests"
 
 model:
-  name: "claude-3-5-haiku-latest"
+  name: "claude-haiku-4-5"
   max_tokens: 300
   temperature: 0.2
 
@@ -129,9 +129,9 @@ Based on complexity:
 
 ```yaml
 model:
-  name: "claude-3-5-sonnet-latest"  # Balanced (recommended)
-         "claude-3-5-haiku-latest"  # Simpler domains
-         "claude-3-opus-latest"     # Complex reasoning
+  name: "claude-sonnet-4-5"  # Balanced (recommended)
+         "claude-haiku-4-5"  # Simpler domains
+         "claude-opus-4-5"     # Complex reasoning
   
   temperature: 0.2  # More consistent
               0.5   # Balanced
@@ -163,7 +163,7 @@ metadata:
   description: "Legal research and document specialist"
 
 model:
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-5"
   temperature: 0.2  # Consistent, accurate
 
 expertise:
@@ -631,7 +631,7 @@ metadata:
   description: "Patient intake and triage"
 
 model:
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-5"
   temperature: 0.1  # Consistent, accurate
 
 expertise:
@@ -665,7 +665,7 @@ metadata:
   description: "Product recommendations"
 
 model:
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-5"
   temperature: 0.3  # Some variation
 
 expertise:
