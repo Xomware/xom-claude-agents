@@ -47,6 +47,10 @@ constraints:
     - "hardcoded_secrets"
 
 tools:
+  # MCP Discipline — enforced via scripts/mcp-audit.sh
+  max_enabled: 10
+  audit_frequency: "weekly"
+
   - name: "write_code"
     enabled: true
   - name: "review_code"
