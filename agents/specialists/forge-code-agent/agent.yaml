@@ -1,13 +1,18 @@
 metadata:
   name: "forge-code-agent"
   description: "Code generation, refactoring, and review specialist"
-  version: "1.0.0"
+  version: "2.0.0"
   author: "Xomware"
   tags: ["code", "development", "refactoring"]
 
+# ─────────────────────────────────────────────────────────────────
+# MODEL ROUTING — Forge uses Sonnet by default; hooks may downgrade
+# to Haiku for trivial tasks (linting, formatting) or upgrade to
+# Opus for architecture/complex design tasks.
+# ─────────────────────────────────────────────────────────────────
 model:
   provider: "anthropic"
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-5"
   temperature: 0.2
   max_tokens: 4000
 
@@ -16,6 +21,41 @@ performance:
   target_response_time_ms: 10000
   max_concurrent_requests: 5
   timeout_ms: 60000
+
+# ─────────────────────────────────────────────────────────────────
+# HOOKS — Deterministic checks before and after LLM invocation
+# ─────────────────────────────────────────────────────────────────
+hooks:
+  pre_invoke:
+    - name: "route_model"
+      enabled: true
+      routing_rules:
+        lint_or_format: "claude-haiku-4-5"
+        code_generation_or_review: "claude-sonnet-4-5"
+        architecture_design: "claude-opus-4-5"
+    - name: "validate_input"
+      enabled: true
+    - name: "check_permissions"
+      enabled: true
+    - name: "mcp_scope_check"
+      description: "Confirm active MCPs ≤10"
+      enabled: true
+  post_invoke:
+    - name: "output_schema_check"
+      enabled: true
+    - name: "cost_tracker"
+      enabled: true
+
+# ─────────────────────────────────────────────────────────────────
+# MCP TOOLS — Forge default tools (counted against global max 10)
+# ─────────────────────────────────────────────────────────────────
+mcp_tools:
+  max_active: 10
+  whitelist:
+    - "github"
+    - "supabase"
+  temp_tool_allowed: true
+  temp_tool_auto_remove: true
 
 system_prompt_file: "prompts/system.md"
 
@@ -64,18 +104,33 @@ tools:
   - name: "suggest_improvements"
     enabled: true
 
+# ─────────────────────────────────────────────────────────────────
+# PRE-MERGE GATES — All must pass before merge is auto-allowed
+# ─────────────────────────────────────────────────────────────────
 quality_gates:
-  - type: "code_lint"
-    enabled: true
-    strict: false
-  - type: "test_coverage"
-    enabled: true
-    min_coverage: 70
-  - type: "security_check"
-    enabled: true
-    fail_on: ["critical"]
-  - type: "format_check"
-    enabled: true
+  pre_merge:
+    - type: "compile_check"
+      description: "Build must compile without errors"
+      enabled: true
+      fail_action: "block_merge"
+    - type: "test_coverage"
+      description: "Unit test coverage ≥80% (raised from legacy 70%)"
+      enabled: true
+      min_coverage: 0.80
+      fail_action: "block_merge"
+    - type: "lint"
+      description: "Zero TS/SCSS/language lint errors"
+      enabled: true
+      strict: true
+      fail_action: "block_merge"
+    - type: "security_scan"
+      description: "No critical vulns; includes prompt injection detection"
+      enabled: true
+      fail_on: ["critical", "prompt_injection"]
+      fail_action: "block_merge"
+  post_invoke:
+    - type: "format_check"
+      enabled: true
 
 behavior:
   style: "detailed"

@@ -220,12 +220,28 @@ cp templates/base-agent.yaml my-agent.yaml
 - **[Deployment Guide](docs/deployment.md)** — Production deployment
 - **[AGENTS.md](AGENTS.md)** — Agent reference with capabilities
 
+## Best Practices: The Four Pillars
+
+All agents in this framework implement four required patterns:
+
+| Pillar | What it does | Benefit |
+|--------|-------------|---------|
+| **Hooks Framework** | Deterministic code before/after every LLM call | Zero-cost validation, routing, rate limiting |
+| **MCP Discipline (≤10)** | Hard cap on active MCP tools | Cleaner context, faster responses |
+| **Model Routing** | Haiku/Sonnet/Opus based on task complexity | ~50% cost reduction |
+| **Pre-merge Gates** | Compile + 80% coverage + lint + security | Deterministic quality, higher PR approval rate |
+
+See [`docs/agent-development.md`](docs/agent-development.md) for full details.
+
 ## Features
 
 ✅ **Production-Ready** — Used in real workflows  
 ✅ **Customizable** — Extend templates for your use case  
 ✅ **Type-Safe** — JSON schemas for all configs  
-✅ **Quality Gates** — Validation and safety checks  
+✅ **Hooks Framework** — Deterministic pre/post-invoke logic  
+✅ **MCP Discipline** — Max 10 active tools (context hygiene)  
+✅ **Model Routing** — Haiku/Sonnet/Opus decision tree  
+✅ **Pre-Merge Gates** — Compile, 80% coverage, lint, security scan  
 ✅ **Cost Controls** — Token budgets and rate limits  
 ✅ **Complete Examples** — Real-world patterns  
 

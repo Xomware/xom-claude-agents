@@ -7,7 +7,7 @@ metadata:
 
 model:
   provider: "anthropic"
-  name: "claude-3-opus-latest"  # Complex reasoning for incident analysis
+  name: "claude-opus-4-5"  # Complex reasoning for incident analysis
   temperature: 0.3
   max_tokens: 3000
 

@@ -1,21 +1,36 @@
 metadata:
   name: "agent-template"
   description: "Base template for all agents - customize for your needs"
-  version: "1.0.0"
+  version: "2.0.0"
   author: "Your Name"
   tags: ["template", "base"]
 
-# Model Configuration
+# ─────────────────────────────────────────────────────────────────
+# MODEL ROUTING — Pick based on task complexity and cost target
+# ─────────────────────────────────────────────────────────────────
+# Decision tree (run deterministically via hooks BEFORE spawning):
+#
+#   Simple lookup / formatting / short Q&A?
+#     → claude-haiku-4-5  (fastest, ~$0.01/task, <2 min)
+#
+#   Code generation / refactoring / analysis?
+#     → claude-sonnet-4-5 (balanced, ~$0.05/task, <5 min)
+#
+#   Complex planning / multi-step reasoning / architecture?
+#     → claude-opus-4-5   (powerful, ~$0.15/task, <10 min)
+#
+# ~60% of tasks should route to Haiku. Default here is Sonnet.
+# ─────────────────────────────────────────────────────────────────
 model:
   provider: "anthropic"
-  name: "claude-3-5-sonnet-latest"  # Options: haiku, sonnet, opus
-  temperature: 0.3  # 0.0 = deterministic, 1.0 = creative
-  max_tokens: 1000  # Adjust based on expected output size
+  name: "claude-sonnet-4-5"        # Options: claude-haiku-4-5 | claude-sonnet-4-5 | claude-opus-4-5
+  temperature: 0.3                  # 0.0 = deterministic, 1.0 = creative
+  max_tokens: 1000                  # Adjust based on expected output size
 
 # Performance SLA
 performance:
-  latency_sla_ms: 5000  # Target response time
-  timeout_ms: 10000     # Hard timeout
+  latency_sla_ms: 5000              # Target response time
+  timeout_ms: 10000                 # Hard timeout
   max_concurrent_requests: 10
 
 # System Prompt
@@ -28,6 +43,45 @@ expertise:
     - "Specialty 2"
     - "Specialty 3"
 
+# ─────────────────────────────────────────────────────────────────
+# HOOKS FRAMEWORK — Deterministic logic that runs BEFORE the LLM
+# No LLM cost. No latency. Runs as pure code.
+# ─────────────────────────────────────────────────────────────────
+hooks:
+  pre_invoke:
+    - name: "route_model"
+      description: "Classify task complexity → assign Haiku/Sonnet/Opus"
+      enabled: true
+    - name: "validate_input"
+      description: "Schema validation, required fields, type checks"
+      enabled: true
+    - name: "check_permissions"
+      description: "Verify caller has required ACL before spending tokens"
+      enabled: true
+    - name: "rate_limit_check"
+      description: "Enforce per-agent rate limits deterministically"
+      enabled: true
+  post_invoke:
+    - name: "output_schema_check"
+      description: "Validate output against expected schema"
+      enabled: true
+    - name: "cost_tracker"
+      description: "Log token usage for budget monitoring"
+      enabled: true
+
+# ─────────────────────────────────────────────────────────────────
+# MCP TOOLS — Max 10 active at once (context discipline)
+# Default whitelist: GitHub, Supabase, AWS, Slack, Xomware API
+# Agents may request 1 temp tool; auto-removed after task.
+# ─────────────────────────────────────────────────────────────────
+mcp_tools:
+  max_active: 10
+  whitelist:
+    - "github"
+    - "slack"
+  temp_tool_allowed: true           # Agent can request 1 additional temp tool
+  temp_tool_auto_remove: true       # Removed when task completes
+
 # Constraints & Safety
 constraints:
   max_response_length: 2000
@@ -35,28 +89,50 @@ constraints:
   rate_limit:
     requests_per_minute: 30
   content_filters:
-    - "pii"  # Personal identifiable information
+    - "pii"               # Personal identifiable information
     - "malicious_code"
 
-# Tools available to this agent
-# Match these with definitions in tools.yaml
+# Tools available to this agent (match with definitions in tools.yaml)
 tools:
   - name: "tool_1"
     enabled: true
   - name: "tool_2"
     enabled: true
 
-# Quality gates - validation checkpoints
+# ─────────────────────────────────────────────────────────────────
+# PRE-MERGE GATES — Deterministic quality gates before any merge
+# All gates must pass before auto-merge is allowed.
+# ─────────────────────────────────────────────────────────────────
 quality_gates:
-  - type: "safety_check"
-    enabled: true
-  - type: "accuracy_check"
-    enabled: true
+  pre_merge:
+    - type: "compile_check"
+      description: "Build must compile without errors"
+      enabled: true
+      fail_action: "block_merge"
+    - type: "test_coverage"
+      description: "Unit test coverage ≥80%"
+      enabled: true
+      min_coverage: 0.80
+      fail_action: "block_merge"
+    - type: "lint"
+      description: "Zero TS/SCSS/language errors"
+      enabled: true
+      fail_action: "block_merge"
+    - type: "security_scan"
+      description: "No critical vulnerabilities; scan for prompt injection"
+      enabled: true
+      fail_on: ["critical", "prompt_injection"]
+      fail_action: "block_merge"
+  post_invoke:
+    - type: "safety_check"
+      enabled: true
+    - type: "accuracy_check"
+      enabled: true
 
 # Behavioral tuning
 behavior:
-  style: "concise"  # concise, detailed, balanced
-  tone: "professional"  # professional, friendly, technical
+  style: "concise"              # concise, detailed, balanced
+  tone: "professional"          # professional, friendly, technical
   explain_reasoning: false
   provide_alternatives: false
 
