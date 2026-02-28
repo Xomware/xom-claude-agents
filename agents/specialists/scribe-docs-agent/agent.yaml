@@ -7,9 +7,12 @@ metadata:
 
 model:
   provider: "anthropic"
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-haiku-4-5"
   temperature: 0.3
   max_tokens: 4000
+  routing_enabled: true
+  routing_config: "../../../templates/model-routing.yaml"
+  routing_rationale: "Documentation formatting, summarization, and README writing are Haiku tasks; escalate to Sonnet only for detailed architectural docs or large-context analysis"
 
 performance:
   latency_sla_ms: 30000
@@ -79,3 +82,12 @@ metadata_tags:
   - "documentation"
   - "technical-writing"
   - "user-facing"
+
+cost_controls:
+  track_model_usage: true
+  alert_if_opus_percent_exceeds: 15
+  monthly_budget_usd: 50
+  preferred_model_target:
+    haiku_min_percent: 40
+    sonnet_max_percent: 50
+    opus_max_percent: 10

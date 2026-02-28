@@ -1,0 +1,134 @@
+# Model Routing Decision Tree for Xomware Claude Agents
+# Version: 1.0.0
+# Purpose: Route tasks to correct model tier for cost optimization
+# Target: ≥40% Haiku, ≤50% Sonnet, ≤10% Opus
+
+metadata:
+  version: "1.0.0"
+  last_updated: "2026-02-28"
+  cost_targets:
+    haiku_min_percent: 40
+    sonnet_max_percent: 50
+    opus_max_percent: 10
+
+models:
+  haiku:
+    name: "claude-haiku-4-5"
+    cost_per_million_tokens_usd: 0.80
+    cost_tier: "low"
+    max_tokens: 1000
+    latency_profile: "fast"  # <500ms typical
+    
+  sonnet:
+    name: "claude-sonnet-4-6"
+    cost_per_million_tokens_usd: 3.00
+    cost_tier: "medium"
+    max_tokens: 8000
+    latency_profile: "moderate"  # 1-3s typical
+    
+  opus:
+    name: "claude-opus-4-5"
+    cost_per_million_tokens_usd: 15.00
+    cost_tier: "high"
+    max_tokens: 32000
+    latency_profile: "slow"  # 5-15s typical
+
+routing_rules:
+  haiku:
+    description: "Simple, fast, cheap — ~40% of tasks"
+    use_when:
+      task_types:
+        - triage         # Classify/route requests
+        - summary        # Summarize text or data
+        - format         # Reformat/transform structured data
+        - lookup         # Simple fact retrieval
+        - notify         # Compose notifications/alerts
+        - classify       # Label or categorize items
+        - echo           # Pass-through or relay responses
+        - status_check   # Check if something is up/running
+        - board_update   # Update board status
+      context_thresholds:
+        max_input_tokens: 2000
+      output_types:
+        - structured_json
+        - structured_yaml
+        - short_text     # <200 words expected output
+    examples:
+      - "Is this PR ready to merge?"
+      - "Format this JSON"
+      - "What's the status of the deploy?"
+      - "Classify this bug report"
+      - "Send this notification"
+
+  sonnet:
+    description: "Standard complex work — ~50% of tasks"
+    use_when:
+      task_types:
+        - code_review
+        - implementation
+        - debugging
+        - analysis
+        - planning
+        - documentation
+        - refactoring
+        - test_writing
+      context_thresholds:
+        min_input_tokens: 2000
+        max_input_tokens: 50000
+      output_types:
+        - code
+        - long_form_text   # >200 words expected
+        - detailed_analysis
+    examples:
+      - "Review this PR"
+      - "Implement this feature"
+      - "Write tests for this module"
+      - "Analyze this error"
+      - "Plan this sprint"
+
+  opus:
+    description: "Deep reasoning only — ~10% of tasks"
+    use_when:
+      task_types:
+        - architecture_design
+        - security_audit
+        - complex_debugging    # Multi-system, hard to reproduce
+        - novel_problem        # No prior pattern exists
+        - strategic_planning   # Long-horizon decisions
+      context_thresholds:
+        min_input_tokens: 50000
+      output_types:
+        - architecture_document
+        - security_report
+        - deep_analysis
+    examples:
+      - "Design the multi-agent orchestration architecture"
+      - "Audit our entire MCP tool surface for security"
+      - "Debug this intermittent race condition across 3 services"
+
+# Agent-specific defaults (override above rules)
+agent_defaults:
+  dispatcher:
+    default_model: "haiku"
+    rationale: "All dispatcher triage is simple classification — always Haiku"
+    never_use: ["opus"]
+    
+  orchestrator:
+    default_model: "sonnet"
+    rationale: "Orchestration requires multi-step reasoning but not frontier-level"
+    
+  forge-code:
+    default_model: "sonnet"
+    rationale: "Code work needs Sonnet; Opus only for architecture reviews"
+    
+  recon-research:
+    default_model: "sonnet"
+    rationale: "Research synthesis needs Sonnet; Opus for novel research questions"
+    
+  scribe-docs:
+    default_model: "haiku"
+    rationale: "Documentation formatting/summarization is Haiku territory"
+    
+  deployer-devops:
+    default_model: "sonnet"
+    rationale: "DevOps tasks vary; default Sonnet with Haiku for status checks"

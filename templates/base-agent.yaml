@@ -8,9 +8,12 @@ metadata:
 # Model Configuration
 model:
   provider: "anthropic"
-  name: "claude-3-5-sonnet-latest"  # Options: haiku, sonnet, opus
+  name: "claude-sonnet-4-6"  # Options: claude-haiku-4-5, claude-sonnet-4-6, claude-opus-4-5
   temperature: 0.3  # 0.0 = deterministic, 1.0 = creative
   max_tokens: 1000  # Adjust based on expected output size
+  routing_enabled: true
+  routing_config: "../../templates/model-routing.yaml"
+  routing_rationale: "Describe why this model was chosen for this agent type"
 
 # Performance SLA
 performance:
@@ -76,3 +79,12 @@ behavior:
 
 metadata_tags:
   - "custom"
+
+cost_controls:
+  track_model_usage: true
+  alert_if_opus_percent_exceeds: 15
+  monthly_budget_usd: 50
+  preferred_model_target:
+    haiku_min_percent: 40
+    sonnet_max_percent: 50
+    opus_max_percent: 10

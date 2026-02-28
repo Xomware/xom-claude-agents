@@ -7,9 +7,12 @@ metadata:
 
 model:
   provider: "anthropic"
-  name: "claude-3-5-sonnet-latest"
+  name: "claude-sonnet-4-6"
   temperature: 0.4
   max_tokens: 4000
+  routing_enabled: true
+  routing_config: "../../../templates/model-routing.yaml"
+  routing_rationale: "Research synthesis and analysis needs Sonnet's reasoning; escalate to Opus only for novel_problem or strategic_planning with large context"
 
 performance:
   latency_sla_ms: 30000
@@ -77,3 +80,12 @@ metadata_tags:
   - "research"
   - "analysis"
   - "data-science"
+
+cost_controls:
+  track_model_usage: true
+  alert_if_opus_percent_exceeds: 15
+  monthly_budget_usd: 50
+  preferred_model_target:
+    haiku_min_percent: 40
+    sonnet_max_percent: 50
+    opus_max_percent: 10
