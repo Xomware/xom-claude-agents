@@ -1,15 +1,24 @@
 # Model Routing Decision Tree for Xomware Claude Agents
-# Version: 1.0.0
-# Purpose: Route tasks to correct model tier for cost optimization
-# Target: ≥40% Haiku, ≤50% Sonnet, ≤10% Opus
+# Version: 2.0.0
+# Purpose: Route tasks to correct model tier — quality where it counts, savings where it doesn't
+# CORRECTED 2026-03-01: Opus=Code, Sonnet=Planning, Haiku=Triage
+#
+# ⚠️  IMPORTANT CHANGE from v1.0.0:
+#     OLD (incorrect): Sonnet=Code, Opus=Architecture/Strategy
+#     NEW (correct):   Opus=Code, Sonnet=Planning/Strategy, Haiku=Triage
+#
+# Rationale: Code correctness is the highest-stakes output. Opus prevents bugs
+# that Sonnet misses. Planning is reasoning-heavy but not correctness-critical —
+# Sonnet handles it well at 5x lower cost.
 
 metadata:
-  version: "1.0.0"
-  last_updated: "2026-02-28"
+  version: "2.0.0"
+  last_updated: "2026-03-01"
+  changelog: "CORRECTED routing: Opus for code, Sonnet for planning, Haiku for triage"
   cost_targets:
-    haiku_min_percent: 40
-    sonnet_max_percent: 50
-    opus_max_percent: 10
+    haiku_target_percent: 40
+    sonnet_target_percent: 30
+    opus_target_percent: 30
 
 models:
   haiku:
@@ -18,6 +27,7 @@ models:
     cost_tier: "low"
     max_tokens: 1000
     latency_profile: "fast"  # <500ms typical
+    role: "triage"
     
   sonnet:
     name: "claude-sonnet-4-6"
@@ -25,6 +35,7 @@ models:
     cost_tier: "medium"
     max_tokens: 8000
     latency_profile: "moderate"  # 1-3s typical
+    role: "planning"
     
   opus:
     name: "claude-opus-4-5"
@@ -32,27 +43,29 @@ models:
     cost_tier: "high"
     max_tokens: 32000
     latency_profile: "slow"  # 5-15s typical
+    role: "code"
 
 routing_rules:
   haiku:
-    description: "Simple, fast, cheap — ~40% of tasks"
+    description: "Triage & simple structured tasks — ~40% of tasks"
+    role: "triage"
     use_when:
       task_types:
-        - triage         # Classify/route requests
-        - summary        # Summarize text or data
-        - format         # Reformat/transform structured data
-        - lookup         # Simple fact retrieval
-        - notify         # Compose notifications/alerts
-        - classify       # Label or categorize items
-        - echo           # Pass-through or relay responses
-        - status_check   # Check if something is up/running
-        - board_update   # Update board status
+        - triage          # Classify/route requests
+        - summary         # Summarize text or data
+        - format          # Reformat/transform structured data
+        - lookup          # Simple fact retrieval
+        - notify          # Compose notifications/alerts
+        - classify        # Label or categorize items
+        - echo            # Pass-through or relay responses
+        - status_check    # Check if something is up/running
+        - board_update    # Update board status
       context_thresholds:
         max_input_tokens: 2000
       output_types:
         - structured_json
         - structured_yaml
-        - short_text     # <200 words expected output
+        - short_text      # <200 words expected output
     examples:
       - "Is this PR ready to merge?"
       - "Format this JSON"
@@ -61,52 +74,71 @@ routing_rules:
       - "Send this notification"
 
   sonnet:
-    description: "Standard complex work — ~50% of tasks"
+    description: "Planning, strategy, and architecture — ~30% of tasks"
+    role: "planning"
+    rationale: >
+      Sonnet handles strategic reasoning and planning well at 5x lower cost than Opus.
+      Planning tasks are reasoning-heavy but not correctness-critical — a suboptimal
+      plan can be revised, but a buggy deployment cannot be easily recalled.
     use_when:
       task_types:
-        - code_review
-        - implementation
-        - debugging
-        - analysis
-        - planning
-        - documentation
-        - refactoring
-        - test_writing
+        - planning           # Sprint/epic/project planning
+        - strategy           # Technical strategy and direction
+        - architecture_design # System/service architecture (design phase)
+        - roadmapping        # Backlog prioritization and scheduling
+        - sprint_planning    # 2-week sprint composition
+        - design_review      # Architecture/design critique
+        - documentation      # Writing docs, READMEs, runbooks
+        - ticket_breakdown   # Breaking epics into stories
       context_thresholds:
-        min_input_tokens: 2000
+        min_input_tokens: 1000
         max_input_tokens: 50000
       output_types:
-        - code
-        - long_form_text   # >200 words expected
-        - detailed_analysis
+        - architecture_document
+        - plan_document
+        - long_form_text    # >200 words expected
     examples:
-      - "Review this PR"
-      - "Implement this feature"
-      - "Write tests for this module"
-      - "Analyze this error"
-      - "Plan this sprint"
+      - "Break this epic into 5 actionable tickets"
+      - "Design the data model for multi-tenant workspaces"
+      - "Plan this 2-week sprint given our velocity"
+      - "Write API docs for these 10 endpoints"
+      - "What's the 6-month technical strategy?"
 
   opus:
-    description: "Deep reasoning only — ~10% of tasks"
+    description: "Code implementation & complex problem-solving — ~30% of tasks"
+    role: "code"
+    rationale: >
+      Opus for code is non-negotiable. Code bugs cost real money and user trust.
+      Opus's superior reasoning prevents subtle bugs that Sonnet would introduce —
+      especially in edge cases, security-sensitive code, and multi-system debugging.
+      Yes, it's more expensive. A single production incident costs 10x more.
     use_when:
       task_types:
-        - architecture_design
-        - security_audit
-        - complex_debugging    # Multi-system, hard to reproduce
-        - novel_problem        # No prior pattern exists
-        - strategic_planning   # Long-horizon decisions
+        - implementation     # Writing new code / features
+        - code_review        # Reviewing PRs for correctness and security
+        - debugging          # Finding and fixing bugs
+        - refactoring        # Structural code improvements
+        - test_writing       # Writing unit/integration/e2e tests
+        - complex_debugging  # Multi-system, hard-to-reproduce issues
+        - security_audit     # Adversarial analysis of code/config
+        - analysis           # Performance analysis, root-cause analysis
+        - novel_problem      # No prior pattern exists
       context_thresholds:
-        min_input_tokens: 50000
+        min_input_tokens: 500
       output_types:
-        - architecture_document
+        - code
+        - diff
         - security_report
         - deep_analysis
     examples:
-      - "Design the multi-agent orchestration architecture"
-      - "Audit our entire MCP tool surface for security"
-      - "Debug this intermittent race condition across 3 services"
+      - "Implement the WebSocket reconnect logic per spec"
+      - "Review this PR for correctness and edge cases"
+      - "Write unit tests for the auth module (80% coverage)"
+      - "Debug this race condition in the payment processor"
+      - "Refactor the notification service to use event sourcing"
 
-# Agent-specific defaults (override above rules)
+# Agent-specific defaults
+# These override routing rules for specific agent roles.
 agent_defaults:
   dispatcher:
     default_model: "haiku"
@@ -115,20 +147,42 @@ agent_defaults:
     
   orchestrator:
     default_model: "sonnet"
-    rationale: "Orchestration requires multi-step reasoning but not frontier-level"
+    rationale: "Orchestration is planning-heavy; Sonnet handles coordination well"
     
   forge-code:
-    default_model: "sonnet"
-    rationale: "Code work needs Sonnet; Opus only for architecture reviews"
+    default_model: "opus"
+    rationale: "Code agents use Opus by default — correctness is paramount"
+    escalate_to: "opus"  # Never downgrade code work
     
   recon-research:
     default_model: "sonnet"
-    rationale: "Research synthesis needs Sonnet; Opus for novel research questions"
+    rationale: "Research synthesis and planning use Sonnet; Opus for implementation"
     
   scribe-docs:
-    default_model: "haiku"
-    rationale: "Documentation formatting/summarization is Haiku territory"
+    default_model: "sonnet"
+    rationale: "Documentation is planning-tier; Sonnet is appropriate"
     
   deployer-devops:
-    default_model: "sonnet"
-    rationale: "DevOps tasks vary; default Sonnet with Haiku for status checks"
+    default_model: "opus"
+    rationale: "Infrastructure-as-code and deployment scripts are code — use Opus"
+    note: "Status checks within deployer tasks still use Haiku"
+
+# Escalation rules
+escalation:
+  context_size_thresholds:
+    force_opus_above_tokens: 50000
+    prefer_sonnet_above_tokens: 5000
+  
+  quality_gates:
+    # Tasks that should NEVER be downgraded below Opus
+    opus_required:
+      - security_audit
+      - production_deployment
+      - database_migration
+      - complex_debugging
+    
+    # Tasks that should NEVER be upgraded above Sonnet
+    sonnet_max:
+      - planning
+      - documentation
+      - design_review
