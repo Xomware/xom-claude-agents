@@ -2,10 +2,15 @@
 # route-model.sh — CLI model router for Xomware Claude Agents
 # Reads templates/model-routing.yaml and outputs the model name to use.
 #
+# CORRECTED ROUTING (2026-03-01):
+#   Haiku  → triage/simple tasks
+#   Sonnet → planning, strategy, architecture
+#   Opus   → code, implementation, debugging (correctness-critical)
+#
 # Usage:
 #   ./scripts/route-model.sh --task-type triage
-#   ./scripts/route-model.sh --task-type implementation --context-tokens 5000
-#   ./scripts/route-model.sh --task-type architecture_design --explain
+#   ./scripts/route-model.sh --task-type implementation
+#   ./scripts/route-model.sh --task-type planning --explain
 #   ./scripts/route-model.sh --agent dispatcher --task-type triage --explain
 #
 # Outputs the model name (e.g., claude-haiku-4-5) to stdout.
@@ -34,15 +39,16 @@ usage() {
 Usage: $(basename "$0") --task-type <type> [OPTIONS]
 
 Options:
-  --task-type <type>        Task type (required). Examples:
+  --task-type <type>        Task type (required). Corrected routing:
                               haiku:  triage, summary, format, lookup, notify,
                                       classify, echo, status_check, board_update
-                              sonnet: code_review, implementation, debugging,
-                                      analysis, planning, documentation,
-                                      refactoring, test_writing
-                              opus:   architecture_design, security_audit,
-                                      complex_debugging, novel_problem,
-                                      strategic_planning
+                              sonnet: planning, strategy, architecture_design,
+                                      roadmapping, sprint_planning, design_review,
+                                      documentation, ticket_breakdown
+                              opus:   implementation, code_review, debugging,
+                                      refactoring, test_writing, analysis,
+                                      complex_debugging, security_audit,
+                                      novel_problem
   --context-tokens <n>      Approximate input token count (default: 0)
   --agent <name>            Agent name for agent-specific overrides
                               (dispatcher, orchestrator, forge-code,
@@ -51,10 +57,11 @@ Options:
   -h, --help                Show this help
 
 Examples:
-  $(basename "$0") --task-type triage
-  $(basename "$0") --task-type implementation --context-tokens 8000
-  $(basename "$0") --task-type architecture_design --explain
-  $(basename "$0") --agent dispatcher --task-type triage --explain
+  $(basename "$0") --task-type triage               # → haiku
+  $(basename "$0") --task-type planning             # → sonnet
+  $(basename "$0") --task-type implementation       # → opus
+  $(basename "$0") --task-type implementation --context-tokens 8000 --explain
+  $(basename "$0") --agent dispatcher --task-type analysis --explain
 EOF
 }
 
@@ -96,13 +103,35 @@ apply_agent_override() {
       return 0
       ;;
     scribe-docs)
-      # scribe defaults haiku; escalates for heavy analysis
-      if [[ "$TASK_TYPE" == "analysis" || "$TASK_TYPE" == "architecture_design" || \
-            "$TASK_TYPE" == "security_audit" ]]; then
-        echo "$MODEL_SONNET"
-        [[ "$EXPLAIN" == true ]] && echo "[explain] Agent override: scribe-docs uses Sonnet for analysis tasks (default is Haiku)." >&2
+      # scribe-docs defaults sonnet (documentation is planning-tier)
+      # Only escalates to opus for code-generating tasks
+      if [[ "$TASK_TYPE" == "implementation" || "$TASK_TYPE" == "code_review" || \
+            "$TASK_TYPE" == "debugging" || "$TASK_TYPE" == "security_audit" ]]; then
+        echo "$MODEL_OPUS"
+        [[ "$EXPLAIN" == true ]] && echo "[explain] Agent override: scribe-docs uses Opus for code tasks despite docs focus." >&2
         return 0
       fi
+      echo "$MODEL_SONNET"
+      [[ "$EXPLAIN" == true ]] && echo "[explain] Agent override: scribe-docs default is Sonnet (documentation is planning-tier)." >&2
+      return 0
+      ;;
+    forge-code)
+      # forge-code always uses Opus — code correctness is paramount
+      echo "$MODEL_OPUS"
+      [[ "$EXPLAIN" == true ]] && echo "[explain] Agent override: forge-code always uses Opus for maximum code correctness." >&2
+      return 0
+      ;;
+    deployer-devops)
+      # deployer uses Opus for code/IaC, Haiku for status checks
+      if [[ "$TASK_TYPE" == "status_check" || "$TASK_TYPE" == "lookup" || \
+            "$TASK_TYPE" == "board_update" ]]; then
+        echo "$MODEL_HAIKU"
+        [[ "$EXPLAIN" == true ]] && echo "[explain] Agent override: deployer uses Haiku for status checks." >&2
+        return 0
+      fi
+      echo "$MODEL_OPUS"
+      [[ "$EXPLAIN" == true ]] && echo "[explain] Agent override: deployer-devops uses Opus for IaC/deployment code." >&2
+      return 0
       ;;
   esac
   return 1  # No override applied
@@ -120,21 +149,22 @@ token_tier() {
 }
 
 # ── Task-type → model tier ────────────────────────────────────────────────────
+# CORRECTED 2026-03-01: Opus=Code, Sonnet=Planning, Haiku=Triage
 task_tier() {
   local task="$1"
   case "$task" in
-    # Haiku tasks
+    # Haiku tasks — triage & simple structured work
     triage|summary|format|lookup|notify|classify|echo|status_check|board_update)
       echo "haiku" ;;
-    # Sonnet tasks
-    code_review|implementation|debugging|analysis|planning|documentation|refactoring|test_writing)
+    # Sonnet tasks — planning, strategy, architecture (reasoning without code)
+    planning|strategy|architecture_design|roadmapping|sprint_planning|design_review|documentation|ticket_breakdown)
       echo "sonnet" ;;
-    # Opus tasks
-    architecture_design|security_audit|complex_debugging|novel_problem|strategic_planning)
+    # Opus tasks — code & complex problem-solving (correctness-critical)
+    implementation|code_review|debugging|refactoring|test_writing|analysis|complex_debugging|security_audit|novel_problem)
       echo "opus" ;;
     *)
-      # Unknown task type → default to Sonnet (safe middle ground)
-      echo "sonnet" ;;
+      # Unknown task type → default to Opus (safe choice when uncertain)
+      echo "opus" ;;
   esac
 }
 
