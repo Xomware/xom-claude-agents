@@ -6,6 +6,7 @@ on:
       - "agents/**/agent.yaml"
       - "agents/**/tools.yaml"
       - "scripts/mcp-audit.sh"
+  workflow_dispatch:
 
 jobs:
   mcp-audit:
